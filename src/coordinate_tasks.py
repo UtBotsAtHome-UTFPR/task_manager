@@ -9,9 +9,14 @@ msg_setAngle = set_angles()
 msg_setAngle.set_Kp_GAR = 0.3
 #
 
+def no_task(self):
+    self.pub_resposta.publish("Please repeat, bruh.")   
+
 class Manager:
     def __init__(self):
         rospy.init_node('tsk_manager', anonymous=True)
+
+        self.pub_setAngle = rospy.Publisher('/cmd_3R', set_angles, queue_size=1)
 
         self.sub_voice_commands = rospy.Subscriber('/voice_commands', String, self.callback, queue_size=1)
         self.pub_manager_commands = rospy.Publisher('/manager_commands', String, queue_size=1)
@@ -38,7 +43,7 @@ class Manager:
         self.pub_manager_commands.publish("Follow me")
 
     def CarryMyLuggagePt2(self):
-        self.pub_resposta.publish("I will stop now, bruh. I will open my hand, pick up your bag, please")
+        self.pub_resposta.publish("I will stop now. I will open my hand, pick up your bag, please")
         self.pub_manager_commands.publish("Stop")
         sleep(5)
         self.pub_manager_commands.publish("Open")
@@ -54,9 +59,8 @@ class Manager:
         }
 
     def callback(self, data):
-        self.task_by_command.get(data.data)(self) # Collects the task name and calls the respective function
-        self.pub_resposta.publish("Callback")
-
+        self.task_by_command.get(data.data, no_task)(self) # Collects the task name and calls the respective function
+        
     def loop(self):
         rospy.spin()
 
