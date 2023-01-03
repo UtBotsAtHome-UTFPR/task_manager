@@ -1,13 +1,13 @@
 # task_manager: package for task structure definition
 
-- Clone repository
+### - Clone repository
     ```https://github.com/UtBotsAtHome-UTFPR/utbots_tasks.git```
 
-- Task manager
+### - Task manager
     ```roslaunch task_manager task_manager.launch```
 
-- Navigation system
+### - Navigation system
     ```roslaunch base_system navigation.launch```
 
-- Voice system
+### - Voice system
     ```roslaunch base_system voice.launch```
