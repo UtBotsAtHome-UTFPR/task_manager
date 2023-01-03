@@ -1,4 +1,4 @@
-# task_manager: package for task structure definition
+# utbots_tasks: for task control and launching base systems
 
 ### - Clone repository
     https://github.com/UtBotsAtHome-UTFPR/utbots_tasks.git
