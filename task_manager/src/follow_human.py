@@ -14,8 +14,8 @@ class FollowHuman():
         self.msg_targetPoint = PointStamped()
         self.msg_cmdVel = Twist()
 
-        self.sub_targetStatus = rospy.Subscriber("/apollo/vision/lock/target/status", String, self.callback_targetStatus)
-        self.sub_targetPoint = rospy.Subscriber("/apollo/vision/lock/target/point", PointStamped, self.callback_targetPoint)
+        self.sub_targetStatus = rospy.Subscriber("/utbots/vision/person/pose/status", String, self.callback_targetStatus)
+        self.sub_targetPoint = rospy.Subscriber("/utbots/vision/person/selected/torsoPoint", PointStamped, self.callback_targetPoint)
         self.pub_cmdVel = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
 
         self.loopRate = rospy.Rate(30)
