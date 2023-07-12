@@ -18,8 +18,8 @@ class Manager:
 
         self.pub_setAngle = rospy.Publisher('/cmd_3R', set_angles, queue_size=1)
 
-        self.sub_voice_commands = rospy.Subscriber('/voice_commands', String, self.callback, queue_size=1)
-        self.pub_manager_commands = rospy.Publisher('/manager_commands', String, queue_size=1)
+        self.sub_voice_commands = rospy.Subscriber('/voice_command', String, self.callback, queue_size=1)
+        self.pub_manager_commands = rospy.Publisher('/manager_command', String, queue_size=1)
         self.pub_resposta = rospy.Publisher('/tts', String, queue_size=1)
 
         self.loop()
