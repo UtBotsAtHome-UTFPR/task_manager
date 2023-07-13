@@ -2,19 +2,19 @@
     <machine name="nano" address="192.168.1.2" env-loader="/opt/ros/melodic/env.sh" user="laser"/>
 
     <group ns="/utbots/voice/tts">
-        <node pkg="utbots_tts" type="ros_tts_mimic.py" name="ros_tts_mimic" output="screen">
+        <node machine="nano" pkg="utbots_tts" type="ros_tts_mimic.py" name="ros_tts_mimic" output="screen">
             <param name="voice" value="en_US/hifi-tts_low" />
         </node>
     </group>
 
     <group ns="/utbots/voice/stt">
-        <node name="vad_node" pkg="vad_silero_ros" type="vad_node" output="screen">
+        <node machine="nano" name="vad_node" pkg="vad_silero_ros" type="vad_node" output="screen">
             <!-- <remap from="emotion"     to="emotion/emotion" />
             <param name = "ms_to_process_vad"   value="300" />
             <param name = "ms_word_interval"    value="1500" />
             <param name = "ms_buffer_vad_aux"   value="900" /> -->
         </node>
-        <node name="whisper_node" pkg="whisper_cpp_ros" type="whisper_node" output="screen">
+        <node machine="nano" name="whisper_node" pkg="whisper_cpp_ros" type="whisper_node" output="screen">
             <!-- <param name = "offset_t_ms"     value = "0" />
             <param name = "duration_ms"     value = "0" />
             <param name = "max_context"     value = "-1" />
