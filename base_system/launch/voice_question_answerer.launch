@@ -6,7 +6,7 @@
         <include file="$(find base_system)/launch/voice_tts.launch"/>
 
         <remap from="question" to="stt/whispered"/>
-        <remap from="answer" to="stt/robot_speech"/>
+        <remap from="answer" to="tts/robot_speech"/>
         <include file="$(find nlu_ros)/launch/question_answerer.launch"/>
     </group>
 

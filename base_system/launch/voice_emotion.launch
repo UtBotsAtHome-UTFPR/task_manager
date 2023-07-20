@@ -1,15 +1,5 @@
 <launch>
-
-    <group ns="emotion">
-        <node pkg="display_emotions" type="display_emotions_node" name="display_emotions_node" output="screen">
-            <param name="faces_cycle"       type="bool"     value="false"/>
-            <param name="faces_cycle_delay" type="double"   value="0.5"/>
-            <param name="speech_gender"     type="string"   value="male"/>
-        </node>
-
-        <node name="image_view" pkg="image_view" type="image_view">
-            <param name="autosize"  value="false" />
-        </node>
-    </group>
-
+    <include file="$(find base_system)/launch/voice_stt.launch" />
+    <include file="$(find base_system)/launch/voice_tts.launch" />
+    <include file="$(find display_emotions)/launch/display_emotions.launch" />
 </launch>
