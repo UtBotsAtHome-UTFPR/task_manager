@@ -1,6 +1,6 @@
 <launch>
 
-    <group ns="stt">
+    <group ns="/utbots/voice/stt">
 
         <node name="vad_node" pkg="vad_silero_ros" type="vad_node" output="screen">
             <!-- <remap from="emotion"     to="emotion/emotion" />

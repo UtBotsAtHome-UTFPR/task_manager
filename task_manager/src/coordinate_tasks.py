@@ -14,11 +14,11 @@ def no_task(self):
 
 class Manager:
     def __init__(self):
-        rospy.init_node('tsk_manager', anonymous=True)
+        rospy.init_node('task_manager', anonymous=True)
 
         self.pub_setAngle = rospy.Publisher('/cmd_3R', set_angles, queue_size=1)
 
-        self.sub_voice_commands = rospy.Subscriber('/utbots/voice/stt/voice_command', String, self.callback, queue_size=1)
+        self.sub_voice_commands = rospy.Subscriber('/utbots/voice/nlu', String, self.callback, queue_size=1)
         self.pub_manager_commands = rospy.Publisher('/utbots/task_manager/manager_command', String, queue_size=1)
         self.pub_resposta = rospy.Publisher('/utbots/voice/tts/robot_speech', String, queue_size=1)
 
