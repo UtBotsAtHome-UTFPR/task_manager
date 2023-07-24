@@ -1,6 +1,6 @@
 <launch>
-    <machine name="nano" address="192.168.1.2" env-loader="/opt/ros/melodic/env.sh" user="laser"/>
-    <include machine="nano" file="$(find freenect_launch)/launch/freenect.launch" >
+
+    <include file="$(find freenect_launch)/launch/freenect_jetson.launch" >
         <arg name="depth_registration" value="true"/>
     </include>
     <include file="$(find mediapipe_track)/launch/body_pose_and_points.launch" />
