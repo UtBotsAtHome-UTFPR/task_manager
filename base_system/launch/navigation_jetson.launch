@@ -1,0 +1,7 @@
+<launch>
+    <include file="$(find nav_main)/launch/lidar_jetson.launch" />
+    <include file="$(find nav_main)/launch/rosaria_jetson.launch" />
+    <include file="$(find nav_main)/launch/tf_jetson.launch" />
+    <include file="$(find nav_main)/launch/move_base_jetson.launch" />
+    <node type="rviz" name="rviz_nav" pkg="rviz" args="-d $(find base_system)/rviz.rviz" />
+</launch>
