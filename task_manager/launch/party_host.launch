@@ -1,0 +1,10 @@
+<launch>
+    <include file="$(find base_system)/launch/face_recognition.launch" />
+    <include file="$(find base_system)/launch/voice_stt.launch"/>
+    <include file="$(find base_system)/launch/voice_tts.launch"/>
+    <node pkg="nlu_ros" type="nlu_node.py" name="nlu_node" output="screen">
+        <param name = "/commands"     value = "True" />
+        <param name = "/people"       value = "True" />   
+    </node>
+    <include file="$(find task_manager)/launch/task_manager.launch"/>
+</launch>

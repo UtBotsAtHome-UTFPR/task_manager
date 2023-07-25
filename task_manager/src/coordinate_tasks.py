@@ -19,7 +19,7 @@ class Manager:
         self.pub_setAngle = rospy.Publisher('/cmd_3R', set_angles, queue_size=1)
 
         self.sub_voice_commands = rospy.Subscriber('/utbots/voice/nlu', String, self.callback, queue_size=1)
-        self.pub_manager_commands = rospy.Publisher('/utbots/task_manager/manager_command', String, queue_size=1)
+        self.pub_manager_commands = rospy.Publisher('/utbots/task_manager/manager_commands', String, queue_size=10)
         self.pub_resposta = rospy.Publisher('/utbots/voice/tts/robot_speech', String, queue_size=1)
 
         self.loop()
@@ -52,10 +52,17 @@ class Manager:
         self.pub_setAngle.publish(msg_setAngle)
         # 
 
+    def PartyHost(self):
+        self.pub_manager_commands.publish("register_face")
+        sleep(1)
+        self.pub_resposta.publish("Hi, my name is Apollo...What is your name?")
+        
+
     # Maps the task function name according to the voice command received
     task_by_command = {
         "Go":CarryMyLuggagePt1,
-        "Stop":CarryMyLuggagePt2
+        "Stop":CarryMyLuggagePt2,
+        "Hello":PartyHost
         }
 
     def callback(self, data):

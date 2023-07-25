@@ -2,5 +2,4 @@
     <node pkg="task_manager" type="coordinate_tasks.py" name="task_manager_node" output="screen" args="">
             <param name="autosize" value="true" />
     </node>
-    <include file="$(find nlu_ros)/launch/commands_extractor.launch" />
 </launch>
