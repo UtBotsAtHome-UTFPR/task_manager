@@ -50,19 +50,12 @@ class Manager:
         # 
         msg_setAngle.set_GAR = 180
         self.pub_setAngle.publish(msg_setAngle)
-        # 
-
-    def PartyHost(self):
-        self.pub_manager_commands.publish("register_face")
-        sleep(1)
-        self.pub_resposta.publish("Hi, my name is Apollo...What is your name?")
-        
+        #       
 
     # Maps the task function name according to the voice command received
     task_by_command = {
         "Go":CarryMyLuggagePt1,
         "Stop":CarryMyLuggagePt2,
-        "Hello":PartyHost
         }
 
     def callback(self, data):
