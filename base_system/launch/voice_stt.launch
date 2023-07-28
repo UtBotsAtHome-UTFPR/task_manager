@@ -3,8 +3,8 @@
     <group ns="/utbots/voice/stt">
 
         <node name="vad_node" pkg="vad_silero_ros" type="vad_node" output="screen">
-            <!-- <remap from="emotion"     to="emotion/emotion" />
-            <param name = "ms_to_process_vad"   value="300" />
+            <remap from="emotion"     to="/utbots/display_emotions/emotion" />
+            <!-- <param name = "ms_to_process_vad"   value="300" />
             <param name = "ms_word_interval"    value="1500" />
             <param name = "ms_buffer_vad_aux"   value="900" /> -->
         </node>
