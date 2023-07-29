@@ -29,10 +29,6 @@ class Manager:
 
     def PartyHost(self):
         self.pub_manager_commands.publish("register_face")
-        sleep(1)
-        if self.msg_enable.data == True:
-            self.pub_response.publish("Hello David!")
-        
 
     # Maps the task function name according to the voice command received
     task_by_command = {
