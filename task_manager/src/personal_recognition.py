@@ -2,6 +2,7 @@ import rospy
 import smach
 from std_msgs.msg import String
 import os
+import smach_ros
 
 
 # Wait for someone to show up, possibly voice queue or find a face in the image: 1 outcome
@@ -81,6 +82,7 @@ def main():
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=['finished'])
+    sm.userdata
 
     # Open the container
     with sm:
@@ -91,8 +93,15 @@ def main():
                                transitions={'new_face_trained':'finished',
                                             'cancelled':'finished'})
 
+    sis = smach_ros.IntrospectionServer('server_name', sm, '/SM_ROOT')
+    sis.start()
+    
+
     # Execute SMACH plan
     outcome = sm.execute()
+
+    rospy.spin()
+    sis.stop()
 
 
 if __name__ == '__main__':
