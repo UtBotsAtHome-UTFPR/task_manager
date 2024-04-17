@@ -3,6 +3,7 @@ import smach
 from std_msgs.msg import String
 import os
 import smach_ros
+from std_srvs.srv import Empty
 
 
 # Wait for someone to show up, possibly voice queue or find a face in the image: 1 outcome
@@ -26,13 +27,9 @@ import smach_ros
 
 
 # define state Foo
-class waiting(smach.State):
+class wait(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['stop_waiting'])
-        
-        self.pub_instructions = rospy.Publisher("/robot_speech", String, queue_size=1)
-
-        #rospy.init_node('waiting_state', anonymous=True)
 
         self.loopRate = rospy.Rate(30)
 
@@ -57,52 +54,82 @@ class waiting(smach.State):
 # define state Bar
 class new_face(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['new_face_trained', 'cancelled'])
-        
-        # Create a subscriber to a topic new_face makes to publish a done message
-
-        # Use os.system("command") to launch new_face (possibly change it to launch files, check how to)
-
-        
+        smach.State.__init__(self, outcomes=['new_face_added', 'failed'])        
 
     def execute(self, userdata):
 
-        # Wait for new_face to send a ok
-
         rospy.loginfo('Executing state new_face')
-        return 'new_face_trained'
-        return 'cancelled'
+
+        rospy.wait_for_service('/utbots_face_recognition/add_new_face')
+        try:
+            add_new_face = rospy.ServiceProxy('/utbots_face_recognition/add_new_face', Empty)
+            resp1 = add_new_face()
+            return 'new_face_added'
         
+        except rospy.ServiceException as e:
 
+            return 'failed'
+        
+class train(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['training_done', 'failed'])        
 
+    def execute(self, userdata):
 
-# main
+        rospy.loginfo('Executing state train')
+
+        rospy.wait_for_service('/utbots_face_recognition/train')
+        try:
+            train_srv = rospy.ServiceProxy('/utbots_face_recognition/train', Empty)
+            resp1 = train_srv()
+            return 'training_done'
+        
+        except rospy.ServiceException as e:
+            return 'failed'
+
+class recognize(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, outcomes=['recognized', 'failed'])        
+
+    def execute(self, userdata):
+
+        #rospy.loginfo('Executing state train')
+
+        rospy.wait_for_service('/utbots_face_recognition/recognize')
+        try:
+            train_srv = rospy.ServiceProxy('/utbots_face_recognition/recognize', Empty)
+            resp1 = train_srv()
+            return 'recognized'
+        
+        except rospy.ServiceException as e:
+            return 'failed'
+
+# Transformar isso numa concurrency state machine pois as tarefas são perfeitamente cíclicas
 def main():
-    rospy.init_node('smach_example_state_machine')
+
+    rospy.init_node('face_recognition_task')
 
     # Create a SMACH state machine
-    sm = smach.StateMachine(outcomes=['finished'])
-    sm.userdata
+    sm = smach.StateMachine(outcomes=['done', 'failed'])
 
     # Open the container
     with sm:
         # Add states to the container
-        smach.StateMachine.add('WAITING', waiting(), 
-                               transitions={'stop_waiting':'NEW_FACE'})
         smach.StateMachine.add('NEW_FACE', new_face(), 
-                               transitions={'new_face_trained':'finished',
-                                            'cancelled':'finished'})
+                               transitions={'new_face_added':'TRAIN',
+                                            'failed':'failed'})
+        
+        smach.StateMachine.add('TRAIN', train(), 
+                               transitions={'training_done':'RECOGNIZE',
+                                            'failed':'failed'})
 
-    sis = smach_ros.IntrospectionServer('server_name', sm, '/SM_ROOT')
-    sis.start()
-    
+        smach.StateMachine.add('RECOGNIZE', recognize(), 
+                               transitions={'recognized':'done',
+                                            'failed':'failed'})
 
     # Execute SMACH plan
     outcome = sm.execute()
-
-    rospy.spin()
-    sis.stop()
-
+    print (outcome)
 
 if __name__ == '__main__':
     main()
