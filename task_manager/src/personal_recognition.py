@@ -45,7 +45,7 @@ class train(smach.State):
 # State that calls the recognition phase and publishes marked image and people
 class recognize(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['recognized', 'failed'])        
+        smach.State.__init__(self, outcomes=['recognized', 'failed'])
 
     def execute(self, userdata):
 
