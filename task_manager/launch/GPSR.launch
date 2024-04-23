@@ -1,0 +1,5 @@
+<launch>
+    <include file="$(find whisper_cpp_ros)/launch/utbots_stt.launch"/>
+    <include file="$(find utbots_tts)/launch/tts_mimic.launch"/>
+    <node name="rasa_interface_node" pkg="utbots_nlu" type="rasa_interface_node.py" output="screen"/>
+</launch>
