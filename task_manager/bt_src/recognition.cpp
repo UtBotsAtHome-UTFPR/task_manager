@@ -2,11 +2,11 @@
 
 Recognize::Recognize() : recognition_action("recognition", true){
 
-    ROS_INFO("[BT:: RECOGNITION] Waiting for recognition action server to start");
+    ROS_INFO("[BT::RECOGNITION] Waiting for recognition action server to start");
     // wait for the action server to start
     recognition_action.waitForServer();
 
-    ROS_INFO("[BT:: RECOGNITION] Recognition server has started");
+    ROS_INFO("[BT::RECOGNITION] Recognition server has started");
 }
 
 BT::NodeStatus Recognize::Recognition(BT::TreeNode& tree){
@@ -14,7 +14,7 @@ BT::NodeStatus Recognize::Recognition(BT::TreeNode& tree){
 
     utbots_face_recognition::RecognizeGoal goal;
 
-    ROS_INFO("[BT:: RECOGNITION] Sending recognition action");
+    ROS_INFO("[BT::RECOGNITION] Sending recognition action");
 
     recognition_action.sendGoalAndWait(goal, ros::Duration(3));
     
@@ -32,4 +32,29 @@ BT::NodeStatus Recognize::Recognition(BT::TreeNode& tree){
 
     return BT::NodeStatus::SUCCESS;
     
+}
+
+NewFace::NewFace(const std::string& name, const BT::NodeConfiguration& config) : StatefulActionNode(name, config), new_face_action("new_face", true) {
+
+    ROS_INFO("[BT::NEW_FACE] Waiting for new face action server to start");
+    // wait for the action server to start
+    new_face_action.waitForServer();
+
+    ROS_INFO("[BT::NEW_FACE] New face server has started");
+    
+}
+
+BT::NodeStatus NewFace::onStart(){
+    // Chama a ação
+    // Retorna running
+}
+
+BT::NodeStatus NewFace::onRunning(){
+    // Lê o feedback e verifica se acabou/obteve sucesso Log de feedback
+
+    // Lembrar de retornar
+}
+
+void NewFace::onHalted(){
+    // Para, já pode ficar...
 }

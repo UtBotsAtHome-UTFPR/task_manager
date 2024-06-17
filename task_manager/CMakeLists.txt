@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib
   actionlib_msgs
   utbots_face_recognition
+  utbots_actions
 )
 
 
@@ -18,6 +19,7 @@ catkin_package(
   roscpp 
   behaviortree_cpp_v3 
   utbots_face_recognition
+  utbots_actions
 )
 
 include_directories(
