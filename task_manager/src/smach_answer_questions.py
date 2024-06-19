@@ -65,7 +65,7 @@ def main():
     sis = smach_ros.IntrospectionServer('visu_recognize_sm', sm, '/SM_ROOT')
     sis.start()
 
-    # Execute SMACH plan 6 times, because are 6 questions
+    # Execute SMACH 6 times, because are 6 questions
     i = 6
     while(i != 0):
         outcome = sm.execute()
