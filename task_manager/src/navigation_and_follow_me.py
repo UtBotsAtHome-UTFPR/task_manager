@@ -16,7 +16,7 @@ def main():
         sm_wp.userdata.action_type = "pose"
         
         with sm_wp:
-            smach.StateMachine.add("Get_Wp", SmGetWaypoint(),
+            smach.StateMachine.add("Get_Wp", SmGoTo.SmGetWaypoint(), # SmGoTo.SmGetWaypoint() or SmGetWaypoint()?
                                 transitions={'got_wp':'Go_Wp'},
                                 remapping={'pose':'coordinate'})
             smach.StateMachine.add("Go_Wp", SmGoTo(),
@@ -28,7 +28,7 @@ def main():
         smach.StateMachine.add("Waypoint_2", sm_wp,
                                transitions={'reached':"Waypoint_3"})
         
-        outcome - sm.execute()
+        outcome = sm.execute()
     
 if __name__ == '__main__':
     main()
