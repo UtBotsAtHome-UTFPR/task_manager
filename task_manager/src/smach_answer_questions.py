@@ -18,8 +18,8 @@ class listen(smach.State):
         #maybe will be another service
         rospy.wait_for_service('/utbots/voice/listen_stt')
         try:
-            object_srv = rospy.ServiceProxy('/utbots/voice/listen_stt', Empty)
-            resp1 = object_srv()
+            listen_srv = rospy.ServiceProxy('/utbots/voice/listen_stt', Empty)
+            resp1 = listen_srv()
             return 'question_understood'
         
         except rospy.ServiceException as e:
@@ -37,8 +37,8 @@ class answer(smach.State):
         #maybe will be another service
         rospy.wait_for_service('/utbots/voice/answer_tts')
         try:
-            object_srv = rospy.ServiceProxy('/utbots/voice/answer_tts', Empty)
-            resp1 = object_srv()
+            answer_srv = rospy.ServiceProxy('/utbots/voice/answer_tts', Empty)
+            resp1 = answer_srv()
             return 'question_answered'
         
         except rospy.ServiceException as e:
@@ -58,7 +58,7 @@ def main():
         smach.StateMachine.add('LISTEN', listen(), 
                                transitions={'question_understood':'ANSWER',
                                             'failed':'failed'})
-        smach.StateMachine.add('ANSWER', listen(), 
+        smach.StateMachine.add('ANSWER', answer(), 
                                transitions={'question_answered':'done',
                                             'failed':'failed'})
 
