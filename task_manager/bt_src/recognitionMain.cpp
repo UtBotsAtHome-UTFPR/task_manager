@@ -1,4 +1,5 @@
 #include "behaviortree_cpp_v3/bt_factory.h"
+#include "behaviortree_cpp_v3/action_node.h"
 
 // file that contains the custom nodes definitions
 #include "recognition.hpp"
@@ -20,10 +21,14 @@ int main(int argc, char **argv)
     BehaviorTreeFactory factory;
 
     Recognize recognition_leaf;
+
+    
+    factory.registerNodeType<NewFace>(("new_face"));
+    
     // Not cursed, just fucked up
     factory.registerSimpleAction("recognition", [&recognition_leaf](TreeNode& node){ return recognition_leaf.Recognition(node); });
 
-    auto tree = factory.createTreeFromFile("./recognition.xml");
+    auto tree = factory.createTreeFromFile("src/utbots_tasks/task_manager/bt_src/recognition.xml");
 
     // To "execute" a Tree you need to "tick" it.
     // The tick is propagated to the children based on the logic of the tree.

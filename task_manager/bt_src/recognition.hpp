@@ -22,7 +22,6 @@ public:
 
 private:
     actionlib::SimpleActionClient<utbots_face_recognition::RecognizeAction> recognition_action;
-    
 
 };
 
@@ -30,6 +29,11 @@ class NewFace : public BT::StatefulActionNode
 {
 public:
     NewFace(const std::string& name, const BT::NodeConfiguration& config);
+
+    // This function must be declared even if no ports are used
+    static BT::PortsList providedPorts();
+
+    void NewFaceFeedbackCb(utbots_actions::new_faceFeedback msg);
 
     BT::NodeStatus onStart();
     
@@ -39,6 +43,9 @@ public:
 
 private:
     
+    ros::NodeHandle nh;
+
     actionlib::SimpleActionClient<utbots_actions::new_faceAction> new_face_action;
+    int n_pics;
 
 };
