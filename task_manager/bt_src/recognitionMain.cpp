@@ -19,12 +19,10 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
     // We use the BehaviorTreeFactory to register our custom nodes
     BehaviorTreeFactory factory;
-
-    Recognize recognition_leaf;
-
     
     factory.registerNodeType<NewFace>(("new_face"));
     
+    Recognize recognition_leaf;
     // Not cursed, just fucked up
     factory.registerSimpleAction("recognition", [&recognition_leaf](TreeNode& node){ return recognition_leaf.Recognition(node); });
 

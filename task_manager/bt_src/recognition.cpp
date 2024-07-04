@@ -11,22 +11,23 @@ Recognize::Recognize() : recognition_action("recognize", true){
 }
 
 BT::NodeStatus Recognize::Recognition(BT::TreeNode& tree){
-    // Chama ação
 
-    utbots_face_recognition::RecognizeGoal goal;
+    utbots_actions::recognitionGoal goal;
 
     ROS_INFO("[BT::RECOGNITION] Sending recognition action");
-
     recognition_action.sendGoalAndWait(goal, ros::Duration(3));
     
     // Change to both get and send image to parameter server (action needs to have sensor_msgs.msg Image as definition, goal is already done)
-    utbots_face_recognition::RecognizeResultConstPtr result = recognition_action.getResult();
+    utbots_actions::recognitionResultConstPtr result = recognition_action.getResult();
 
-    // Returns failure if recognition didn't send an image back (aka failed).
+    if(recognition_action.getState() != actionlib::SimpleClientGoalState::SUCCEEDED){
+        ROS_INFO("[BT::RECOGNITION] Recognition system failed or image had no people: ");
+        return BT::NodeStatus::FAILURE;
+    }
 
-    // In the future change it so if a name is repeated within recognized people than it should return failure (aka recognized someone else as an operator)
-    try{result->image.data;}
-    catch(...){return BT::NodeStatus::FAILURE;}
+    // Put this into the vatiable server
+    ROS_INFO("[BT::RECOGNITION] Recognized people are: ");
+    for_each(result.get()->people.array.begin(), result.get()->people.array.end(), [](const vision_msgs::Object elem) { std::cout << elem.id.data << " "; });
 
     // Aqui não faço nada mas tenho que mandar para o parâmetro de variáveis da árvore de alguma forma
     result->image;

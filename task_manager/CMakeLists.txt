@@ -8,8 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   behaviortree_cpp_v3
   actionlib
-  actionlib_msgs
-  utbots_face_recognition
   utbots_actions
 )
 
@@ -18,7 +16,6 @@ catkin_package(
   CATKIN_DEPENDS 
   roscpp 
   behaviortree_cpp_v3 
-  utbots_face_recognition
   utbots_actions
 )
 
@@ -35,7 +32,7 @@ add_dependencies(recognitionMain ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 
 target_link_libraries(recognitionMain ${catkin_LIBRARIES} )
 
-add_dependencies(recognitionMain ${utbots_face_recognition_EXPORTED_TARGETS})
+#add_dependencies(recognitionMain ${utbots_face_recognition_EXPORTED_TARGETS})
 
 catkin_install_python(PROGRAMS src/coordinate_tasks.py src/personal_recognition.py src/smach_example.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
