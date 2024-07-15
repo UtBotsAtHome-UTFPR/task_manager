@@ -21,6 +21,7 @@ int main(int argc, char **argv)
     BehaviorTreeFactory factory;
     
     factory.registerNodeType<NewFace>(("new_face"));
+    factory.registerNodeType<Train>(("train"));
     
     Recognize recognition_leaf;
     // Not cursed, just fucked up

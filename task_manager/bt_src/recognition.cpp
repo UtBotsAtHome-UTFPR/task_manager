@@ -36,6 +36,58 @@ BT::NodeStatus Recognize::Recognition(BT::TreeNode& tree){
     
 }
 
+Train::Train(const std::string& name, const BT::NodeConfiguration& config) : StatefulActionNode(name, config), train_action("train", true) {
+    
+    ROS_INFO("[BT::TRAIN] Waiting for train action server to start");
+    // wait for the action server to start
+    train_action.waitForServer();
+    
+    //ros::Subscriber sub = nh.subscribe<utbots_actions::new_faceFeedback>("new_face/feedback", 0, &NewFace::NewFaceFeedbackCb);
+
+    ROS_INFO("[BT::TRAIN] Train server has started");
+
+}
+
+BT::PortsList Train::providedPorts(){
+    // This is a placeholder and not in use
+    return { BT::InputPort<std::string>("message") };
+}
+
+BT::NodeStatus Train::onStart(){
+    utbots_actions::trainGoal goal;
+
+    // Change this to take the name from the Behavior tree database
+
+    train_action.sendGoal(goal);
+
+    ROS_INFO("[BT::NEW_FACE] Running train");
+
+    return BT::NodeStatus::RUNNING;
+
+}
+
+BT::NodeStatus Train::onRunning(){
+    
+    //float p_complete = (n_pics / (float)total_n_pictures) * 100;
+
+    // Change so it publishes the percentage complete
+    if(train_action.getState() == actionlib::SimpleClientGoalState::SUCCEEDED){
+        ROS_INFO("[BT::TRAIN] Succeeded");
+        return BT::NodeStatus::SUCCESS;
+    }
+    else if(train_action.getState() == actionlib::SimpleClientGoalState::PREEMPTED || train_action.getState() == actionlib::SimpleClientGoalState::REJECTED || train_action.getState() == actionlib::SimpleClientGoalState::RECALLED || train_action.getState() == actionlib::SimpleClientGoalState::ABORTED){
+        ROS_INFO("[BT::TRAIN] Fell into a failed state");
+        return BT::NodeStatus::FAILURE;
+    }
+    return BT::NodeStatus::RUNNING;
+
+}
+
+void Train::onHalted(){
+    ROS_INFO("[BT::TRAIN] Action halted");
+    train_action.cancelAllGoals();
+}
+
 NewFace::NewFace(const std::string& name, const BT::NodeConfiguration& config) : StatefulActionNode(name, config), new_face_action("new_face", true) {
 
     ROS_INFO("[BT::NEW_FACE] Waiting for new face action server to start");
@@ -85,7 +137,7 @@ BT::NodeStatus NewFace::onRunning(){
         ROS_INFO("[BT::NEW_FACE] Succeeded");
         return BT::NodeStatus::SUCCESS;
     }
-    else if(new_face_action.getState() == actionlib::SimpleClientGoalState::PREEMPTED || new_face_action.getState() == actionlib::SimpleClientGoalState::REJECTED || new_face_action.getState() == actionlib::SimpleClientGoalState::RECALLED){
+    else if(new_face_action.getState() == actionlib::SimpleClientGoalState::PREEMPTED || new_face_action.getState() == actionlib::SimpleClientGoalState::REJECTED || new_face_action.getState() == actionlib::SimpleClientGoalState::RECALLED || new_face_action.getState() == actionlib::SimpleClientGoalState::ABORTED){
         ROS_INFO("[BT::NEW_FACE] Fell into a failed state");
         return BT::NodeStatus::FAILURE;
     }
