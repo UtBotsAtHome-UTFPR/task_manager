@@ -4,16 +4,20 @@ import smach_ros
 from std_srvs.srv import Empty
 
 #for now, just a sketch
-
+number_of_questions = 6
+question_counter = 0
 
 # This state will listen and recognize which of the questions is
 class listen(smach.State):
     def __init__(self):
-        smach.State.__init__(self, outcomes=['question_understood', 'failed'])        
+        smach.State.__init__(self, outcomes=['question_understood', 'all_answered','failed'])        
 
     def execute(self, userdata):
 
         rospy.loginfo('Executing state listen')
+
+        if question_counter >= number_of_questions:
+            return 'done'
 
         #maybe will be another service
         rospy.wait_for_service('/utbots/voice/listen_stt')
@@ -34,6 +38,7 @@ class answer(smach.State):
 
         rospy.loginfo('Executing state answer')
 
+        question_counter += 1
         #maybe will be another service
         rospy.wait_for_service('/utbots/voice/answer_tts')
         try:
@@ -57,21 +62,14 @@ def main():
         # Add states to the container
         smach.StateMachine.add('LISTEN', listen(), 
                                transitions={'question_understood':'ANSWER',
+                                            'all_answered':'done',
                                             'failed':'failed'})
         smach.StateMachine.add('ANSWER', answer(), 
-                               transitions={'question_answered':'done',
+                               transitions={'question_answered':'LISTEN',
                                             'failed':'failed'})
 
     sis = smach_ros.IntrospectionServer('visu_recognize_sm', sm, '/SM_ROOT')
     sis.start()
-
-    # Execute SMACH 6 times, because are 6 questions
-    i = 6
-    while(i != 0):
-        outcome = sm.execute()
-        print(outcome)          #regardless of outcome, proceeds to next question
-        i -= 1
-        
 
     rospy.spin()
     sis.stop()
