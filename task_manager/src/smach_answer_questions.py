@@ -19,8 +19,6 @@ class listen(smach.State):
         if question_counter >= number_of_questions:
             return 'done'
 
-        #maybe will be another service
-        rospy.wait_for_service('/utbots/voice/listen_stt')
         try:
             listen_srv = rospy.ServiceProxy('/utbots/voice/listen_stt', Empty)
             resp1 = listen_srv()
@@ -39,8 +37,6 @@ class answer(smach.State):
         rospy.loginfo('Executing state answer')
 
         question_counter += 1
-        #maybe will be another service
-        rospy.wait_for_service('/utbots/voice/answer_tts')
         try:
             answer_srv = rospy.ServiceProxy('/utbots/voice/answer_tts', Empty)
             resp1 = answer_srv()
@@ -53,6 +49,8 @@ class answer(smach.State):
 def main():
 
     rospy.init_node('answer_question')
+    #client = actionlib.SimpleActionClient('bla', blabla)
+    #client.wait_for_server()
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=['done', 'failed'])
