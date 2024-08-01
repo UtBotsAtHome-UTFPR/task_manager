@@ -11,10 +11,23 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  behaviortree_cpp_v3
+  actionlib
+  utbots_actions
 )
 
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+catkin_package(
+  CATKIN_DEPENDS
+  roscpp
+  behaviortree_cpp_v3
+  utbots_actions
+)
+
+#add_dependencies(rasa_interface_node ${catkin_EXPORTED_TARGETS})
+
+catkin_install_python(PROGRAMS src/coordinate_tasks.py src/personal_recognition.py src/smach_example.py src/smach_answer_questions.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -102,12 +115,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES task_manager
-#  CATKIN_DEPENDS roscpp rospy std_msgs
-#  DEPENDS system_lib
-)
+
 
 ###########
 ## Build ##
@@ -205,6 +213,3 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-catkin_install_python(PROGRAMS src/coordinate_tasks.py src/personal_recognition.py src/smach_example.py src/smach_answer_questions.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
