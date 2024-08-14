@@ -58,7 +58,7 @@ def main():
                                 SimpleActionState('interpret_nlu',
                                                   InterpretNLUAction, 
                                                   goal),
-                                transitions={'succeeded':'done',
+                                transitions={'succeeded':'QUESTION_COUNTER',
                                             'aborted':'failed',
                                             'preempted':'done'})
 
