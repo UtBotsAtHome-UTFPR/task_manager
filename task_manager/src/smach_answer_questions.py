@@ -1,9 +1,10 @@
+#!/usr/bin/venv_utbots_tasks/bin/python
+
 import rospy
 import smach
 import actionlib
 from utbots_actions.msg import InterpretNLUAction, InterpretNLUGoal
 from smach_ros import SimpleActionState
-from std_msgs.msg import String
 from fpdf import FPDF
 
 number_of_questions = 6
