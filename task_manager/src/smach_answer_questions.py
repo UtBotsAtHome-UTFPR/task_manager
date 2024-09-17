@@ -2,6 +2,7 @@
 
 import rospy
 import smach
+import smach_ros
 import actionlib
 from utbots_actions.msg import InterpretNLUAction, InterpretNLUGoal
 from smach_ros import SimpleActionState
@@ -9,16 +10,13 @@ from fpdf import FPDF
 
 number_of_questions = 6
 
-log = str('')
-question_number = 1
-
 # This state will count the questions
 class question_counter(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['action_understood', 'all_answered','aborted'],
                             input_keys=['question_counter'],
-                            output_keys=['question_counter_out'])        
+                            output_keys=['question_counter_out'])
 
     def execute(self, userdata):
 
@@ -42,10 +40,9 @@ class answers_log(smach.State):
                             input_keys=['nlu_input', 'nlu_output'])        
 
     def execute(self, userdata):
+        global question_number, log
+        
         rospy.loginfo('Executing state answers_log')
-
-        global log
-        global question_number        #number of question to print to PDF
 
         try:
             question = userdata.nlu_input.data
@@ -68,9 +65,15 @@ class answers_log(smach.State):
         except rospy.ROSInterruptException:
             return 'aborted'
 
+
 def main():
 
     rospy.init_node('smach_answer_questions', anonymous=True)
+
+    global log
+    global question_number
+    log = str('')
+    question_number = 1
 
     client = actionlib.SimpleActionClient('interpret_nlu', InterpretNLUAction)
     client.wait_for_server()
@@ -113,20 +116,24 @@ def main():
                                remapping={'nlu_input': 'nlu_input', 
                                           'nlu_output': 'nlu_output'})
 
+    sis = smach_ros.IntrospectionServer('answer_questions', sm, '/SM_ROOT')
+    sis.start()
+
     # Execute the state machine
     outcome = sm.execute()
     print(outcome)
     print(log)
+    log = ''.join(c for c in log if ord(c) < 256)
 
     # Save log to PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Times", size=10)
     pdf.multi_cell(0, 5, log)
-    pdf.output("catkin_ws/src/utbots_tasks/task_manager/answer_questions_log.pdf")
-
+    pdf.output("/home/laser/catkin_ws/src/utbots_tasks/task_manager/answer_questions_log.pdf")
 
     rospy.spin()
+    sis.stop()
 
 if __name__ == "__main__":
     main()
