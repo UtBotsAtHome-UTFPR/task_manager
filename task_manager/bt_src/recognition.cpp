@@ -14,6 +14,8 @@ BT::NodeStatus Recognize::Recognition(BT::TreeNode& tree){
 
     utbots_actions::recognitionGoal goal;
 
+    goal.ExpectedFaces.data = 0;
+
     ROS_INFO("[BT::RECOGNITION] Sending recognition action");
     recognition_action.sendGoalAndWait(goal, ros::Duration(3));
     
@@ -27,10 +29,7 @@ BT::NodeStatus Recognize::Recognition(BT::TreeNode& tree){
 
     // Put this into the vatiable server
     ROS_INFO("[BT::RECOGNITION] Recognized people are: ");
-    for_each(result.get()->people.array.begin(), result.get()->people.array.end(), [](const vision_msgs::Object elem) { std::cout << elem.id.data << " "; });
-
-    // Aqui não faço nada mas tenho que mandar para o parâmetro de variáveis da árvore de alguma forma
-    result->image;
+    for_each(result.get()->People.array.begin(), result.get()->People.array.end(), [](const vision_msgs::Object elem) { std::cout << elem.id.data << " "; });
 
     return BT::NodeStatus::SUCCESS;
     

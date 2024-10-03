@@ -2,8 +2,10 @@
     <BehaviorTree ID="MainTree">
     <Sequence name="root_sequence">
 
+        <new_face      name="new_face"   />
         <train         name="train"      />
         <recognition   name="recognition"/>
+
     </Sequence>
     </BehaviorTree>
 </root>
