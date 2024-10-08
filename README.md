@@ -1,23 +1,40 @@
-# utbots_tasks: for task control and launching base systems
+# utbots_tasks
+- ROS repository designed to orchestrate tasks for RoboCup@Home.
 
-## - Clone repository
+### Building
 
-    https://github.com/UtBotsAtHome-UTFPR/utbots_tasks.git
+```bash
+cd ~/catkin_ws/src
+git clone https://github.com/UtBotsAtHome-UTFPR/utbots_tasks.git
+cd ..
+catkin_make
+```
 
-## - Updated to use State Machine
+### Dependencies
 
-    roslaunch task_manager recognition.launch
+Some tasks require additional packages. You need to go to the relevant repository and build it. 
+To start this, you can install utbots_dependencies:
 
-## - Old tasks
+```bash
+cd ~/catkin_ws/src/
+git clone https://github.com/UtBotsAtHome-UTFPR/utbots_dependencies.git
+cd ..
+catkin_make
+```
+To install Python dependencies for this repository:
 
-### - Task manager
+```bash
+cd /usr/bin
+sudo python3 -m venv venv_utbots_tasks
+source /usr/bin/venv_utbots_tasks/bin/activate
+cd $HOME/catkin_ws/src/utbots_tasks
+sudo pip install -r requirements.txt
+```
 
-    roslaunch task_manager task_manager.launch
+## Running
 
-### - Navigation system
+To test it, you can launch a specific file, such as:
 
-    roslaunch base_system navigation.launch
-
-### - Voice system
-
-    roslaunch base_system voice.launch
+```bash
+roslaunch task_manager answer_questions.launch 
+```
