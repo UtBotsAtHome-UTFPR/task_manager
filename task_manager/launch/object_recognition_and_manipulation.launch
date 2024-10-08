@@ -1,0 +1,7 @@
+<launch>
+    <include file="$(find freenect_launch)/launch/freenect.launch" >
+        <arg name="depth_registration" value="true"/>
+    </include>
+    <node pkg="yolov8ros" type="yolov8node.py" name="yolov8node" output="screen"/>
+    <!-- <node pkg="vison_tools" type="extract_3d_centroid.py" name="extract_3d_centroid" output="screen"/> -->
+</launch>

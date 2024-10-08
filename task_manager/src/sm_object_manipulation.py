@@ -156,7 +156,6 @@ def main():
     # Define the goal for the action client
     # nav_goal = 
     yolo_goal = YOLODetectionGoal()
-    yolo_goal.TargetCategory.data = "bottle"
 
     # Open the container
     with sm:
