@@ -7,15 +7,24 @@ import utbots_actions.msg
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovarianceStamped
+from std_srvs.srv import Empty
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 # State that calls the adding new images phase
+
+'''/usb_cam/start_capture                           
+/usb_cam/stop_capture'''
+
+
 class new_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['new_face_added', 'failed'])
 
-        rospy.loginfo('Checking new_face action')
+        rospy.loginfo('Checking new_face action and camera')
+
+        rospy.wait_for_service('/usb_cam/start_capture')
+        rospy.wait_for_service('/usb_cam/stop_capture')
 
         self.client = actionlib.SimpleActionClient('new_face', utbots_actions.msg.new_faceAction)
         self.client.wait_for_server()
@@ -29,9 +38,25 @@ class new_face(smach.State):
         goal.n_pictures.data = 1
         goal.name.data = "Operator"
 
+        try:
+            usb_cam = rospy.ServiceProxy('/usb_cam/start_capture', Empty)
+            usb_cam()
+        except rospy.ServiceException as e:
+            rospy.logerr('Camera service failed')
+            return 'failed'
+
         self.client.send_goal_and_wait(goal)
 
         if self.client.get_state() == actionlib.GoalStatus.SUCCEEDED:
+            success = True
+        
+        try:
+            usb_cam = rospy.ServiceProxy('/usb_cam/stop_capture', Empty)
+            usb_cam()
+        except rospy.ServiceException as e:
+            rospy.logerr('Camera service failed')
+            return 'failed'
+        if success:
             return 'new_face_added'
         return 'failed'
         
@@ -77,9 +102,25 @@ class recognize(smach.State):
         goal = utbots_actions.msg.recognitionGoal()
         goal.ExpectedFaces.data = 0
 
+        try:
+            usb_cam = rospy.ServiceProxy('/usb_cam/start_capture', Empty)
+            usb_cam()
+        except rospy.ServiceException as e:
+            rospy.logerr('Camera service failed')
+            return 'failed'
+
         self.client.send_goal_and_wait(goal, rospy.Duration(3))
 
         if self.client.get_state() == actionlib.GoalStatus.SUCCEEDED:
+            success = True
+        
+        try:
+            usb_cam = rospy.ServiceProxy('/usb_cam/stop_capture', Empty)
+            usb_cam()
+        except rospy.ServiceException as e:
+            rospy.logerr('Camera service failed')
+            return 'failed'
+        if success:
             return 'recognized'
         return 'failed'
     
@@ -175,20 +216,20 @@ def main():
     # Open the container
     with sm:
         # Add states to the container
-        smach.StateMachine.add('INITIAL_POSE', init_pose(), 
-                               transitions={'succeeded':'NEW_FACE'})
+        #smach.StateMachine.add('INITIAL_POSE', init_pose(), 
+        #                       transitions={'succeeded':'NEW_FACE'})
         
         smach.StateMachine.add('NEW_FACE', new_face(), 
                                transitions={'new_face_added':'TRAIN',
                                             'failed':'failed'})
         
         smach.StateMachine.add('TRAIN', train(), 
-                               transitions={'training_done':'TURN_AROUND',
+                               transitions={'training_done':'RECOGNIZE',# 'TURN_AROUND' for the actual task
                                             'failed':'failed'})
         
-        smach.StateMachine.add('TURN_AROUND', turn_around(), 
-                               transitions={'succeeded':'RECOGNIZE',
-                                            'failed':'failed'})
+        #smach.StateMachine.add('TURN_AROUND', turn_around(), 
+        #                      transitions={'succeeded':'RECOGNIZE',
+        #                                    'failed':'failed'})
 
         smach.StateMachine.add('RECOGNIZE', recognize(), 
                                transitions={'recognized':'done',
