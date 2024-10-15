@@ -8,6 +8,8 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseWithCovarianceStamped
 from std_srvs.srv import Empty
+from utbots_actions.msg import YOLODetectionAction, YOLODetectionGoal, Extract3DPointAction, Extract3DPointGoal
+from smach_ros import SimpleActionState
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -228,7 +230,7 @@ class detection_log(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['log_saved', 'aborted'],
-                            input_keys=['labeled_img', 'bboxes'])        
+                            input_keys=['labeled_img', 'bboxes', 'yolo_bboxes'])        
 
     def execute(self, userdata):
         
@@ -267,6 +269,9 @@ class detection_log(smach.State):
                 text = f"- {bbox.Class}: {bbox.id}"
                 c.drawString(100, text_height, text)
                 text_height -= 12
+            
+            text = f"- {userdata.yolo_bboxes.length()} people were detected"
+            c.drawString(100, text_height, text)
 
             # Finalize the PDF file
             c.showPage()
@@ -284,6 +289,9 @@ def main():
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=['done', 'failed'])
+
+    yolo_goal = YOLODetectionGoal()
+    yolo_goal.TargetCategory.data = "Person"
 
     # Open the container
     with sm:
@@ -304,9 +312,20 @@ def main():
         #                                    'failed':'failed'})
 
         smach.StateMachine.add('RECOGNIZE', recognize(), 
-                               transitions={'recognized':'DETECTION_LOG',
+                               transitions={'recognized':'GET_DETECTION',
                                             'failed':'RECOGNIZE'})
         
+        smach.StateMachine.add('GET_DETECTION', 
+                               SimpleActionState('YOLO_detection',
+                                                 YOLODetectionAction, 
+                                                 goal=yolo_goal,
+                                                 result_slots=['LabeledImage', 'DetectedObjs', 'Success']),
+                               transitions={'succeeded': 'DETECTION_LOG',
+                                            'aborted': 'failed',
+                                            'preempted': 'DETECTION_LOG'},
+                               remapping={'LabeledImage': 'yolo_labeled_img', 
+                                          'DetectedObjs': 'yolo_bboxes'})
+
         smach.StateMachine.add('DETECTION_LOG', detection_log(),
                                transitions={'aborted': 'failed',
                                             'log_saved':'done'})
