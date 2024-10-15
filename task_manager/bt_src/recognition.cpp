@@ -29,7 +29,8 @@ BT::NodeStatus Recognize::Recognition(BT::TreeNode& tree){
 
     // Put this into the vatiable server
     ROS_INFO("[BT::RECOGNITION] Recognized people are: ");
-    for_each(result.get()->People.array.begin(), result.get()->People.array.end(), [](const vision_msgs::Object elem) { std::cout << elem.id.data << " "; });
+    // Trocar array por bbox
+    //for_each(result.get()->People.array.begin(), result.get()->People.array.end(), [](const vision_msgs::Object elem) { std::cout << elem.id.data << " "; });
 
     return BT::NodeStatus::SUCCESS;
     

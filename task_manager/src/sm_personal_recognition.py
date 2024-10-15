@@ -11,6 +11,12 @@ from std_srvs.srv import Empty
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+import cv2
+from cv_bridge import CvBridge
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+import time
 # State that calls the adding new images phase
 
 '''/usb_cam/start_capture                           
@@ -44,6 +50,8 @@ class new_face(smach.State):
         except rospy.ServiceException as e:
             rospy.logerr('Camera service failed')
             return 'failed'
+        
+        time.sleep(1)
 
         self.client.send_goal_and_wait(goal)
 
@@ -87,7 +95,8 @@ class train(smach.State):
 class recognize(smach.State):
     def __init__(self):
 
-        smach.State.__init__(self, outcomes=['recognized', 'failed'])
+        smach.State.__init__(self, outcomes=['recognized', 'failed'],
+                             output_keys=['labeled_img', 'bboxes'])
 
         rospy.loginfo('Checking recognize action')
 
@@ -99,8 +108,10 @@ class recognize(smach.State):
 
         rospy.loginfo('Executing state recognize')
 
+        success = False
+
         goal = utbots_actions.msg.recognitionGoal()
-        goal.ExpectedFaces.data = 0
+        goal.ExpectedFaces.data = 1
 
         try:
             usb_cam = rospy.ServiceProxy('/usb_cam/start_capture', Empty)
@@ -108,6 +119,8 @@ class recognize(smach.State):
         except rospy.ServiceException as e:
             rospy.logerr('Camera service failed')
             return 'failed'
+    
+        rospy.sleep(2)
 
         self.client.send_goal_and_wait(goal, rospy.Duration(3))
 
@@ -121,6 +134,8 @@ class recognize(smach.State):
             rospy.logerr('Camera service failed')
             return 'failed'
         if success:
+            userdata.labeled_img = self.client.get_result().Image
+            userdata.bboxes = self.client.get_result().People
             return 'recognized'
         return 'failed'
     
@@ -145,8 +160,6 @@ class init_pose(smach.State):
         init_msg.pose.pose.orientation.y = odom_msg.pose.pose.orientation.y
         init_msg.pose.pose.orientation.z = odom_msg.pose.pose.orientation.z
         init_msg.pose.pose.orientation.w = odom_msg.pose.pose.orientation.w
-
-        rospy.sleep(1)
 
         rospy.loginfo("setting initial pose")
         self.pub.publish(init_msg)
@@ -205,6 +218,65 @@ class turn_around(smach.State):
             return 'succeeded'
         return 'failed'
 
+global bboxes
+bboxes = None
+
+# Initialize CvBridge to convert ROS image message to OpenCV image
+bridge = CvBridge()
+
+class detection_log(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                            outcomes=['log_saved', 'aborted'],
+                            input_keys=['labeled_img', 'bboxes'])        
+
+    def execute(self, userdata):
+        
+        rospy.loginfo('Executing state get_objects_bbox')
+
+        try:
+            global bboxes
+
+            log_img = userdata.labeled_img
+            bboxes = userdata.bboxes.bounding_boxes
+
+            # Convert the ROS Image message to an OpenCV image
+            cv_image = bridge.imgmsg_to_cv2(log_img)
+
+            # Save the image as a temporary file (as reportlab requires an image file)
+            image_filename = "/tmp/log_img.jpg"
+            cv2.imwrite(image_filename, cv_image)
+
+            current_time = rospy.Time.now()
+
+            # Create a new PDF file
+            pdf_file = f"/home/segalle/catkin_ws/src/utbots_tasks/task_manager/logs/object_recognition_manipulation_log_{current_time}.pdf"
+            c = canvas.Canvas(pdf_file, pagesize=A4)
+
+            # Insert an image (you can adjust the image size by scaling)
+            image_path = "/tmp/log_img.jpg"
+            c.drawImage(image_path, x=85, y=440, width=6*inch, height=4.5*inch)
+
+            # Add some text
+            c.setFont("Helvetica", 12)
+
+            text_height = 420
+            c.drawString(100, text_height, "Objects recognized:")
+            text_height -= 15
+            for bbox in bboxes:
+                text = f"- {bbox.Class}: {bbox.id}"
+                c.drawString(100, text_height, text)
+                text_height -= 12
+
+            # Finalize the PDF file
+            c.showPage()
+            c.save()
+            
+            return 'log_saved'
+        
+        except rospy.ROSInterruptException:
+            return 'aborted'
+
 # Transformar isso numa concurrency state machine pois as tarefas são perfeitamente cíclicas
 def main():
 
@@ -232,8 +304,12 @@ def main():
         #                                    'failed':'failed'})
 
         smach.StateMachine.add('RECOGNIZE', recognize(), 
-                               transitions={'recognized':'done',
-                                            'failed':'failed'})
+                               transitions={'recognized':'DETECTION_LOG',
+                                            'failed':'RECOGNIZE'})
+        
+        smach.StateMachine.add('DETECTION_LOG', detection_log(),
+                               transitions={'aborted': 'failed',
+                                            'log_saved':'done'})
 
     # Execute SMACH plan
     outcome = sm.execute()
