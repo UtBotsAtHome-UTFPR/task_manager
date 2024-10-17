@@ -4,6 +4,8 @@ import rospy
 import smach
 import smach_ros
 import actionlib
+from rospkg import RosPack
+import os
 from utbots_actions.msg import InterpretNLUAction, InterpretNLUGoal
 from smach_ros import SimpleActionState
 from fpdf import FPDF
@@ -131,8 +133,13 @@ def main():
     pdf.add_page()
     pdf.set_font("Times", size=10)
     pdf.multi_cell(0, 5, log)
-    pdf.output(f"/home/laser/catkin_ws/src/utbots_tasks/task_manager/logs/answer_questions_log_{current_time}.pdf")
-
+    
+    rospack = RosPack()
+    pkg_path = rospack.get_path('task_manager')
+    dir=pkg_path+"/logs/"
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+    pdf.output(dir+f"answer_questions_log_{current_time}.pdf")#
     rospy.spin()
     sis.stop()
 
