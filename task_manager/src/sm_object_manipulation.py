@@ -8,6 +8,7 @@ import rospkg
 import yaml
 from cv_bridge import CvBridge
 import cv2
+from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
 from utbots_actions.msg import YOLODetectionAction, YOLODetectionGoal, Extract3DPointAction, Extract3DPointGoal
 from smach_ros import SimpleActionState
@@ -63,6 +64,11 @@ class go_to_shelf(smach.State):
                             outcomes=['succeeded', 'aborted'],
                             input_keys=['waypoint'])
         self.pub = rospy.Publisher('/bridge_navigation_to_pose/goal', PoseStamped, queue_size=1)
+        self.sub = rospy.Subscriber('/bridge_navigation_to_pose/result', String, self.set_nav_result, queue_size=1)
+        self.result = ""
+    
+    def set_nav_result(self, msg):
+        self.result = msg.data
 
     def execute(self, userdata):
 
@@ -70,7 +76,14 @@ class go_to_shelf(smach.State):
 
         try:
             self.pub.publish(retrieve_waypoint("shelf"))
-            return 'succeeded'
+
+            while self.result == "":
+                pass
+
+            if self.result == "succeeded":
+                return 'succeeded'
+            else:
+                return 'aborted'
         
         except rospy.ROSInterruptException:
             return 'aborted'
@@ -173,13 +186,13 @@ def main():
 
     rospy.init_node('sm_object_manipulation', anonymous=True)
 
-    # client_yolo = actionlib.SimpleActionClient('YOLO_detection', YOLODetectionAction)
-    # client_yolo.wait_for_server()
+    client_yolo = actionlib.SimpleActionClient('YOLO_detection', YOLODetectionAction)
+    client_yolo.wait_for_server()
 
-    # rospy.loginfo("[TASK] YOLO Detection server up")
+    rospy.loginfo("[TASK] YOLO Detection server up")
 
-    # client_ext = actionlib.SimpleActionClient('extract_3d_point', Extract3DPointAction)
-    # client_ext.wait_for_server()
+    client_ext = actionlib.SimpleActionClient('extract_3d_point', Extract3DPointAction)
+    client_ext.wait_for_server()
 
     rospy.loginfo("[TASK] Extract 3D Point server up")
 
