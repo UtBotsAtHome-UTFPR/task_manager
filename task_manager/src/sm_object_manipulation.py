@@ -1,76 +1,44 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import rospy
 import smach
 import smach_ros
-import rospkg
 import actionlib
 from cv_bridge import CvBridge
 import cv2
-from geometry_msgs.msg import PoseStamped
 from utbots_actions.msg import YOLODetectionAction, YOLODetectionGoal, Extract3DPointAction, Extract3DPointGoal
 from smach_ros import SimpleActionState
-import yaml
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
 
+global bboxes
+bboxes = None
+
 # Initialize CvBridge to convert ROS image message to OpenCV image
 bridge = CvBridge()
 
-# Initialize the rospkg instance
-rospack = rospkg.RosPack()
-
-# Get the path to the desired package (replace 'your_package' with the actual package name)
-package_path = rospack.get_path('task_manager')
-
-def retrieve_waypoint(nametag):
-    # Open and read the YAML file
-    with open(f"{package_path}/waypoints.yaml", 'r') as file:
-        data = yaml.safe_load(file)
-
-    # Find the pose with the given nametag
-    for pose_data in data['poses']:
-        if pose_data['nametag'] == nametag:
-            # Create a PoseStamped message
-            pose_stamped = PoseStamped()
-
-            # Fill in the header
-            pose_stamped.header.seq = pose_data['header']['seq']
-            pose_stamped.header.stamp.secs = pose_data['header']['stamp']['secs']
-            pose_stamped.header.stamp.nsecs = pose_data['header']['stamp']['nsecs']
-            pose_stamped.header.frame_id = pose_data['header']['frame_id']
-
-            # Fill in the pose (position and orientation)
-            pose_stamped.pose.position.x = pose_data['pose']['position']['x']
-            pose_stamped.pose.position.y = pose_data['pose']['position']['y']
-            pose_stamped.pose.position.z = pose_data['pose']['position']['z']
-
-            pose_stamped.pose.orientation.x = pose_data['pose']['orientation']['x']
-            pose_stamped.pose.orientation.y = pose_data['pose']['orientation']['y']
-            pose_stamped.pose.orientation.z = pose_data['pose']['orientation']['z']
-            pose_stamped.pose.orientation.w = pose_data['pose']['orientation']['w']
-
-            return pose_stamped
-
 # This state will send a nav goal to the place the objects are located
-class go_to_shelf(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, 
-                            outcomes=['succeeded', 'aborted'],
-                            input_keys=['waypoint'])
-        self.pub = rospy.Publisher('/bridge_navigation_to_pose/goal', PoseStamped, queue_size=1)
+# class go_to_shelf(smach.State):
+    # def __init__(self):
+    #     smach.State.__init__(self, 
+    #                         outcomes=['reached', 'all_answered','aborted'],
+    #                         input_keys=['waypoint'])
 
-    def execute(self, userdata):
+    # def execute(self, userdata):
 
-        rospy.loginfo('Executing state go_to_shelf')
+    #     rospy.loginfo('Executing state question_counter')
 
-        try:
-            self.pub.publish(retrieve_waypoint("shelf"))
-            return 'succeeded'
+    #     if userdata.question_counter >= number_of_questions:
+    #         return 'all_answered'
+
+    #     try:
+    #         userdata.question_counter_out = userdata.question_counter + 1
+    #         return 'action_understood'
         
-        except rospy.ROSInterruptException:
-            return 'aborted'
+    #     except rospy.ROSInterruptException:
+    #         return 'aborted'
+
 
         
 # This state will save the labeled image with objects detected by YOLOv8
@@ -78,19 +46,20 @@ class detection_log(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['log_saved', 'aborted'],
-                            input_keys=['labeled_img', 'bboxes'],
-                            output_keys=['bboxes'])        
+                            input_keys=['labeled_img', 'bboxes'])        
 
     def execute(self, userdata):
         
         rospy.loginfo('Executing state get_objects_bbox')
 
         try:
+            global bboxes
+
             log_img = userdata.labeled_img
             bboxes = userdata.bboxes.bounding_boxes
 
             # Convert the ROS Image message to an OpenCV image
-            cv_image = bridge.imgmsg_to_cv2(log_img, desired_encoding="bgr8")
+            cv_image = bridge.imgmsg_to_cv2(log_img)
 
             # Save the image as a temporary file (as reportlab requires an image file)
             image_filename = "/tmp/log_img.jpg"
@@ -104,16 +73,19 @@ class detection_log(smach.State):
 
             # Insert an image (you can adjust the image size by scaling)
             image_path = "/tmp/log_img.jpg"
-            c.drawImage(image_path, x=100, y=600, width=4*inch, height=3*inch)
+            c.drawImage(image_path, x=85, y=440, width=6*inch, height=4.5*inch)
 
             # Add some text
             c.setFont("Helvetica", 12)
 
-            text_height = 800
+            text_height = 420
+            c.drawString(100, text_height, "Objects recognized:")
+            text_height -= 15
+
             for bbox in bboxes:
-                text = f"- {bbox}"
+                text = f"- {bbox.Class}"
                 c.drawString(100, text_height, text)
-                text_height += 200
+                text_height -= 12
 
             # Finalize the PDF file
             c.showPage()
@@ -129,21 +101,20 @@ class select_object(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['get_object_point', 'all_objects', 'aborted'],
-                            input_keys=['bboxes_in'],
-                            output_keys=['selected_bbox', 'bboxes_out'])
+                            output_keys=['selected_bbox'])
 
     def execute(self, userdata):
 
         rospy.loginfo('Executing state select_object')
 
-        bboxes = userdata.bboxes_in
+        global bboxes
 
-        if userdata.bboxes_in != []:
+        if bboxes == []:
             return 'all_objects'
 
         try:
             userdata.selected_bbox = bboxes[0]
-            userdata.bboxes_out = bboxes.pop(0)
+            bboxes = bboxes[1:]
             return 'get_object_point'
         
         except rospy.ROSInterruptException:
@@ -152,7 +123,7 @@ class select_object(smach.State):
 # This state exctracts the 3D point for a given object
 class get_object_point(smach_ros.SimpleActionState):
     def __init__(self):
-        smach_ros.SimpleActionState.__init__(self, 'action_server_name', Extract3DPointAction, 
+        smach_ros.SimpleActionState.__init__(self, 'extract_3d_point', Extract3DPointAction, 
                                              goal_cb=self.goal_callback, 
                                              result_slots=['Point', 'Success'],
                                              input_keys=['selected_bbox'],
@@ -160,18 +131,24 @@ class get_object_point(smach_ros.SimpleActionState):
 
     def goal_callback(self, userdata, goal):
         # Use the goal_data from previous state to set the goal for the action
-        goal.some_goal_field = userdata.selected_bbox
+        goal.Object_bbox = userdata.selected_bbox
         return goal
 
 def main():
 
     rospy.init_node('sm_object_manipulation', anonymous=True)
 
-    # client_yolo = actionlib.SimpleActionClient('yolo_detection', YOLODetectionAction)
-    # client_yolo.wait_for_server()
+    client_yolo = actionlib.SimpleActionClient('YOLO_detection', YOLODetectionAction)
+    client_yolo.wait_for_server()
 
-    # client_ext = actionlib.SimpleActionClient('extract_3d_point', Extract3DPointAction)
-    # client_ext.wait_for_server()
+    rospy.loginfo("[TASK] YOLO Detection server up")
+
+    client_ext = actionlib.SimpleActionClient('extract_3d_point', Extract3DPointAction)
+    client_ext.wait_for_server()
+
+    rospy.loginfo("[TASK] Extract 3D Point server up")
+
+    rospy.loginfo("[TASK] Initiating Task Object Recognition and Manipulation")
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=['done', 'failed'])
@@ -183,11 +160,16 @@ def main():
     # Open the container
     with sm:
         # State that goes to the shelf
-        smach.StateMachine.add('GO_TO_SHELF', 
-                                go_to_shelf(),
-                                transitions={'succeeded': 'GET_DETECTION',
-                                            'aborted': 'failed',
-                                            'preempted': 'failed'})
+        # smach.StateMachine.add('GO_TO_SHELF', 
+        #                         SimpleActionState('go_to_shelf',
+        #                                             , 
+        #                                             goal=nav_goal,
+        #                                             result_slots=[]),
+        #                         transitions={'succeeded': 'ANSWERS_LOG',
+        #                                         'aborted': 'ANSWERS_LOG',
+        #                                         'preempted': 'ANSWERS_LOG'},
+        #                         remapping={'NLUInput': 'nlu_input', 
+        #                                   'NLUOutput': 'nlu_output'})
 
         # State that gets the object detections from YOLO
         smach.StateMachine.add('GET_DETECTION', 
@@ -215,9 +197,7 @@ def main():
                                transitions={'all_objects' : 'done',
                                             'get_object_point': 'GET_OBJECT_POINT',
                                             'aborted': 'failed'},
-                               remapping={'bboxes': 'bboxes_in',
-                                          'selected_bbox' : 'selected_bbox',
-                                          'bboxes_out': 'bboxes'})
+                               remapping={'selected_bbox' : 'selected_bbox'})
         
         # State that extracts the 3D point for a given object
         smach.StateMachine.add('GET_OBJECT_POINT', 
@@ -238,6 +218,10 @@ def main():
 
     sis = smach_ros.IntrospectionServer('object_manipulation', sm, '/SM_ROOT')
     sis.start()
+
+    # Execute the state machine
+    outcome = sm.execute()
+    print(outcome)
 
     rospy.spin()
     sis.stop()
