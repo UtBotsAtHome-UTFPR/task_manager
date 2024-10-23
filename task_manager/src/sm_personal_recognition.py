@@ -10,6 +10,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped
 from std_srvs.srv import Empty
 from utbots_actions.msg import YOLODetectionAction, YOLODetectionGoal, Extract3DPointAction, Extract3DPointGoal
 from smach_ros import SimpleActionState
+from std_msgs.msg import String
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -230,7 +231,7 @@ class detection_log(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
                             outcomes=['log_saved', 'aborted'],
-                            input_keys=['labeled_img', 'bboxes', 'yolo_bboxes'])        
+                            input_keys=['labeled_img', 'bboxes', 'yolo_bboxes', 'yolo_labeled_img'])        
 
     def execute(self, userdata):
         
@@ -252,12 +253,20 @@ class detection_log(smach.State):
             current_time = rospy.Time.now()
 
             # Create a new PDF file
-            pdf_file = f"/home/segalle/catkin_ws/src/utbots_tasks/task_manager/logs/object_recognition_manipulation_log_{current_time}.pdf"
+            pdf_file = f"/home/laser/catkin_ws/src/utbots_tasks/task_manager/logs/object_recognition_manipulation_log_{current_time}.pdf"
             c = canvas.Canvas(pdf_file, pagesize=A4)
 
             # Insert an image (you can adjust the image size by scaling)
             image_path = "/tmp/log_img.jpg"
             c.drawImage(image_path, x=85, y=440, width=6*inch, height=4.5*inch)
+
+
+            yolo_log = userdata.yolo_labeled_img
+            cv_image = bridge.imgmsg_to_cv2(yolo_log)
+            image_filename = "/tmp/yolo_log_img.jpg"
+            cv2.imwrite(image_filename, cv_image)
+            image_path = "/tmp/yolo_log_img.jpg"
+            c.drawImage(image_path, x=85, y=50, width=6*inch, height=4.5*inch)
 
             # Add some text
             c.setFont("Helvetica", 12)
@@ -270,13 +279,14 @@ class detection_log(smach.State):
                 c.drawString(100, text_height, text)
                 text_height -= 12
             
-            text = f"- {userdata.yolo_bboxes.length()} people were detected"
+            text = f"- {len(userdata.yolo_bboxes.bounding_boxes)} people were detected"
+            
             c.drawString(100, text_height, text)
 
             # Finalize the PDF file
             c.showPage()
             c.save()
-            
+            pub_text.publish("Done")
             return 'log_saved'
         
         except rospy.ROSInterruptException:
@@ -287,29 +297,32 @@ def main():
 
     rospy.init_node('face_recognition_task')
 
+    global pub_text 
+    pub_text = rospy.Publisher("/robot_speech", String, queue_size=1)
+
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=['done', 'failed'])
 
     yolo_goal = YOLODetectionGoal()
-    yolo_goal.TargetCategory.data = "Person"
+    yolo_goal.TargetCategory.data = "person"
 
     # Open the container
     with sm:
         # Add states to the container
-        #smach.StateMachine.add('INITIAL_POSE', init_pose(), 
-        #                       transitions={'succeeded':'NEW_FACE'})
+        smach.StateMachine.add('INITIAL_POSE', init_pose(), 
+                               transitions={'succeeded':'NEW_FACE'})
         
         smach.StateMachine.add('NEW_FACE', new_face(), 
                                transitions={'new_face_added':'TRAIN',
                                             'failed':'failed'})
         
         smach.StateMachine.add('TRAIN', train(), 
-                               transitions={'training_done':'RECOGNIZE',# 'TURN_AROUND' for the actual task
+                               transitions={'training_done':'TURN_AROUND',# 'TURN_AROUND' for the actual task
                                             'failed':'failed'})
         
-        #smach.StateMachine.add('TURN_AROUND', turn_around(), 
-        #                      transitions={'succeeded':'RECOGNIZE',
-        #                                    'failed':'failed'})
+        smach.StateMachine.add('TURN_AROUND', turn_around(), 
+                              transitions={'succeeded':'RECOGNIZE',
+                                            'failed':'failed'})
 
         smach.StateMachine.add('RECOGNIZE', recognize(), 
                                transitions={'recognized':'GET_DETECTION',
