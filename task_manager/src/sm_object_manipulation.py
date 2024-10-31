@@ -15,6 +15,7 @@ from smach_ros import SimpleActionState
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
+import time
 
 global bboxes
 bboxes = None
@@ -64,11 +65,7 @@ class go_to_shelf(smach.State):
                             outcomes=['succeeded', 'aborted'],
                             input_keys=['waypoint'])
         self.pub = rospy.Publisher('/bridge_navigation_to_pose/goal', PoseStamped, queue_size=1)
-        self.sub = rospy.Subscriber('/bridge_navigation_to_pose/result', String, self.set_nav_result, queue_size=1)
         self.result = ""
-    
-    def set_nav_result(self, msg):
-        self.result = msg.data
 
     def execute(self, userdata):
 
@@ -77,12 +74,16 @@ class go_to_shelf(smach.State):
         try:
             self.pub.publish(retrieve_waypoint("shelf"))
 
-            while self.result == "":
-                pass
+            init_msg = String()
+            init_msg.header.frame_id = "map"
+
+            odom_msg = rospy.wait_for_message('/bridge_navigation_to_pose/result', String)
 
             if self.result == "succeeded":
+                self.result = ""
                 return 'succeeded'
             else:
+                self.result = ""
                 return 'aborted'
         
         except rospy.ROSInterruptException:
