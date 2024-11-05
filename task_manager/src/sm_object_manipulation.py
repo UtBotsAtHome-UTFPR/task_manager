@@ -10,7 +10,7 @@ from cv_bridge import CvBridge
 import cv2
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
-from utbots_actions.msg import YOLODetectionAction, YOLODetectionGoal, Extract3DPointAction, Extract3DPointGoal
+from utbots_actions.msg import YOLODetectionAction, YOLODetectionGoal, Extract3DPointAction
 from smach_ros import SimpleActionState
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -64,26 +64,26 @@ class go_to_shelf(smach.State):
         smach.State.__init__(self, 
                             outcomes=['succeeded', 'aborted'],
                             input_keys=['waypoint'])
-        self.pub = rospy.Publisher('/bridge_navigation_to_pose/goal', PoseStamped, queue_size=1)
-        self.result = ""
+        self.result = "" 
+        self.pub = rospy.Publisher('/bridge_navigate_to_pose/goal', PoseStamped, queue_size=1)
 
     def execute(self, userdata):
 
         rospy.loginfo('Executing state go_to_shelf')
 
         try:
+            # Sleep briefly to ensure the message is sent
+            rospy.sleep(2)
+            rospy.loginfo("Publish waypoint")
             self.pub.publish(retrieve_waypoint("shelf"))
 
-            init_msg = String()
-            init_msg.header.frame_id = "map"
-
-            odom_msg = rospy.wait_for_message('/bridge_navigation_to_pose/result', String)
-
-            if self.result == "succeeded":
-                self.result = ""
+            self.result = rospy.wait_for_message('/bridge_navigate_to_pose/result', String)
+            print(self.result)
+            if self.result.data == "Succeeded":
+                self.result.data = ""
                 return 'succeeded'
             else:
-                self.result = ""
+                self.result.data = ""
                 return 'aborted'
         
         except rospy.ROSInterruptException:
