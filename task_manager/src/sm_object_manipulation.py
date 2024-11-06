@@ -15,7 +15,6 @@ from smach_ros import SimpleActionState
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-import time
 
 global bboxes
 bboxes = None
