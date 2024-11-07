@@ -19,6 +19,8 @@ rospack = rospkg.RosPack()
 package_path = rospack.get_path('task_manager')
 
 def retrieve_waypoint(nametag):
+    if nametag == None:
+        return False
     # Open and read the YAML file
     with open(f"{package_path}/waypoints.yaml", 'r') as file:
         data = yaml.safe_load(file)
@@ -86,7 +88,7 @@ class go_to_waypoint(smach.State):
                             input_keys=['waypoint'])
         self.result = "" 
         self.pub = rospy.Publisher('/bridge_navigate_to_pose/goal', PoseStamped, queue_size=1)
-        self.waypoint = waypoint
+        self.waypoint = None
 
     def execute(self, userdata):
 
@@ -96,7 +98,10 @@ class go_to_waypoint(smach.State):
             # Sleep briefly to ensure the message is sent
             rospy.sleep(2)
             rospy.loginfo("Publish waypoint")
-            self.pub.publish(retrieve_waypoint(self.waypoint))
+            waypoint = retrieve_waypoint(userdata.waypoint)
+            if waypoint == False:
+                return 'aborted'
+            self.pub.publish(waypoint)
 
             self.result = rospy.wait_for_message('/bridge_navigate_to_pose/result', String)
             print(self.result)
@@ -113,7 +118,7 @@ class go_to_waypoint(smach.State):
 
 def find_and_follow():
     
-    current_position = rospy.wait_for_message()
+    current_position = rospy.wait_for_message('/odom', PoseStamped, 10)
 
     tf_buffer = tf2_ros.Buffer()
     listener = tf2_ros.TransformListener(tf_buffer)
@@ -156,6 +161,7 @@ class follow_operator(smach.State):
     def execute(self, userdata):
 
         rospy.loginfo('Executing state follow_operator')
+        stop_flag = False
 
         point = rospy.wait_for_message("selected/torsoPoint", PointStamped)
 
@@ -184,7 +190,8 @@ global stop_flag
 stop_flag = False
 
 def stop_sub(msg):
-    stop_flag = True if "stop" in msg.data.lower() else False
+    if "stop" in msg.data.lower():
+        stop_flag = True
 
 def main():
     rospy.init_node("sm_navigation_and_follow_me")
