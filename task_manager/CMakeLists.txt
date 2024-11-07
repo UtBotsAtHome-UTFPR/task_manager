@@ -25,7 +25,7 @@ catkin_package(
 
 #add_dependencies(rasa_interface_node ${catkin_EXPORTED_TARGETS})
 
-catkin_install_python(PROGRAMS src/coordinate_tasks.py src/sm_personal_recognition.py src/smach_example.py src/sm_answer_questions.py src/sm_object_manipulation.py
+catkin_install_python(PROGRAMS src/sm_personal_recognition.py src/smach_example.py src/sm_answer_questions.py src/sm_object_manipulation.py src/sm_navigation_and_follow_me.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

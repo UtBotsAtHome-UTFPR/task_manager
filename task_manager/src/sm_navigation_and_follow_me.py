@@ -195,7 +195,7 @@ def main():
     sm = smach.StateMachine(outcomes=['done', 'failed'])
     
     with sm:
-        # Tem que criar isso
+        '''# Tem que criar isso
         #smach.StateMachine.add('SET_WAYPOINTS', 
         #                        set_waypoints(),
         #                        transitions={'succeeded': 'ENTER_ARENA',
@@ -241,7 +241,11 @@ def main():
                                 go_to_waypoint(),
                                 transitions={'succeeded': 'done',
                                             'aborted': 'failed'},
-                                remapping={'waypoint': 'outside'})
+                                remapping={'waypoint': 'outside'})'''
+        smach.StateMachine.add('FOLLOW_OPERATOR', 
+                                follow_operator(),
+                                transitions={'succeeded': 'done',
+                                            'aborted': 'failed'})
 
     sis = smach_ros.IntrospectionServer('navigation_and_follow_me', sm, '/SM_ROOT')
     sis.start()
