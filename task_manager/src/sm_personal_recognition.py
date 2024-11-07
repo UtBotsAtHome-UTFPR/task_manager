@@ -176,7 +176,7 @@ class turn_around(smach.State):
 
         rospy.loginfo('Checking navigation action')
 
-        self.goal_pub = rospy.Publisher('nav_bridge/goal')
+        self.goal_pub = rospy.Publisher('/bridge_navigate_to_pose/goal')
 
         
 
@@ -214,7 +214,7 @@ class turn_around(smach.State):
         goal.target_pose.pose.orientation.w = flipped_quaternion[0]
 
         self.goal_pub.publish(goal)
-        turn_success = rospy.wait_for_message('/nav_bridge_result', String)
+        turn_success = rospy.wait_for_message('/bridge_navigate_to_pose/result', String)
         
         if turn_success == "succeeded":
             return 'succeeded'
