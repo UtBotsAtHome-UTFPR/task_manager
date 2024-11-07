@@ -3,4 +3,7 @@
     <node pkg="yolov8ros" type="yolov8node.py" name="yolov8node" output="screen"/>
     <node pkg="vision_tools" type="extract_3d_centroid.py" name="extract_3d_centroid" output="screen"/>
     <node pkg="task_manager" type="sm_object_manipulation.py" name="sm_object_manipulation" output="screen"/>
+    <!-- Run bridge -->
+    <exec cmd="bridge command" />
+    </launch>
 </launch>

@@ -10,6 +10,8 @@
         </node>
 
         <node name="whisper_node" pkg="whisper_cpp_ros" type="whisper_node" output="screen">
+
+        </node>
             <!-- <param name = "offset_t_ms"     value = "0" />
             <param name = "duration_ms"     value = "0" />
             <param name = "max_context"     value = "-1" />
@@ -24,8 +26,6 @@
             <param name = "model"           value = "$(find whisper_cpp_ros)/models/ggml-base.en.bin" />
             <param name = "print_timings"   value = "false" />
             <param name = "show_result"     value = "true" /> -->
-        </node>
-
     </group>
 
 </launch>
