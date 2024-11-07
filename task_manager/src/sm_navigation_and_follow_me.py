@@ -7,7 +7,6 @@ import rospkg
 import smach_ros
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import PointStamped
-from utbots_navigation.nav_main.src.smGoTo import SmGoTo
 from std_msgs.msg import String
 import time
 import math
@@ -49,7 +48,7 @@ def retrieve_waypoint(nametag):
             return pose_stamped
 
 # This state will wait for the door to be open
-class enter_arena(smach.State):
+#class enter_arena(smach.State):
     # def __init__(self, waypoint):
     #     smach.State.__init__(self, 
     #                         outcomes=['succeeded', 'aborted'],
@@ -131,9 +130,9 @@ def find_and_follow():
     # Transform the point to the 'odom' frame
     point_in_camera = tf_buffer.transform(current_position, 'camera_link', rospy.Duration(1.0))
     
+    # Has the orientation of goal set to be the direction from the robot to the nav_goal
     # Calculate the angle between A and B
     theta = math.atan2(point.point.y[1] - point_in_camera.pose.orientation.y, point.point.x - point_in_camera.pose.orientation.x)
-
     # Create the quaternion (w, x, y, z)
     quaternion = (math.cos(theta / 2), 0, 0, math.sin(theta / 2))
 
@@ -145,7 +144,7 @@ def find_and_follow():
     goal.pose.orientation.z = quaternion[3]
 
     return goal
-    
+
 
 # This state initiates and manages operator following
 class follow_operator(smach.State):
@@ -181,38 +180,49 @@ class follow_operator(smach.State):
                 return 'succeeded'
 
             self.pub_goal.publish(find_and_follow())
-            
-        
+
+
 global stop_flag 
 stop_flag = False
 
 def stop_sub(msg):
-    stop_flag = True if msg.data == 'stop' else False
+    stop_flag = True if "stop" in msg.data.lower() else False
 
 def main():
     rospy.init_node("sm_navigation_and_follow_me")
-    rospy.Subscriber('/tópico_de_falar_pare', String, stop_sub)
+    rospy.Subscriber('/utbots/voice/stt/whispered', String, stop_sub)
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=['done', 'failed'])
     
     with sm:
+        # Tem que criar isso
+        #smach.StateMachine.add('SET_WAYPOINTS', 
+        #                        set_waypoints(),
+        #                        transitions={'succeeded': 'ENTER_ARENA',
+        #                                    'aborted': 'failed'},
+        #                                    remapping={'waypoint1':'waypoint1',
+        #                                    'waypoint2':'waypoint2'.
+        #                                    'outside':'outside'})
+
         # State that waits for the door opening to enter the arena
-        smach.StateMachine.add('ENTER_ARENA', 
-                                enter_arena(),
-                                transitions={'succeeded': 'GO_TO_WAYPOINT1',
-                                            'aborted': 'failed'})
+        #smach.StateMachine.add('ENTER_ARENA', 
+        #                        enter_arena(),
+        #                        transitions={'succeeded': 'GO_TO_WAYPOINT1',
+        #                                    'aborted': 'failed'})
         
         # State that goes to the waypoint1
         smach.StateMachine.add('GO_TO_WAYPOINT1', 
-                                go_to_waypoint("waypoint1"),
+                                go_to_waypoint(),
                                 transitions={'succeeded': 'GO_TO_WAYPOINT2',
-                                            'aborted': 'failed'})
+                                            'aborted': 'failed'},
+                                remapping={'waypoint': 'waypoint1'})
                 
         # State that goes to the waypoint2
         smach.StateMachine.add('GO_TO_WAYPOINT2', 
-                                go_to_waypoint("waypoint2"),
+                                go_to_waypoint(),
                                 transitions={'succeeded': 'FOLLOW_OPERATOR',
-                                            'aborted': 'failed'})
+                                            'aborted': 'failed'},
+                                remapping={'waypoint': 'waypoint2'})
 
         # State that initiates and manages operator following
         smach.StateMachine.add('FOLLOW_OPERATOR', 
@@ -222,14 +232,16 @@ def main():
                                         
         # State that goes back to the waypint 2
         smach.StateMachine.add('GO_TO_WAYPOINT2_BACK', 
-                                go_to_waypoint("waypoint2"),
+                                go_to_waypoint(),
                                 transitions={'succeeded': 'LEAVE_ARENA',
-                                            'aborted': 'failed'})
+                                            'aborted': 'failed'},
+                                remapping={'waypoint': 'waypoint2'})
         # State that goes outside
         smach.StateMachine.add('LEAVE_ARENA', 
-                                go_to_waypoint("outside"),
+                                go_to_waypoint(),
                                 transitions={'succeeded': 'done',
-                                            'aborted': 'failed'})
+                                            'aborted': 'failed'},
+                                remapping={'waypoint': 'outside'})
 
     sis = smach_ros.IntrospectionServer('navigation_and_follow_me', sm, '/SM_ROOT')
     sis.start()
