@@ -131,9 +131,7 @@ def find_and_follow():
     point_in_camera = tf_buffer.transform(current_position, 'camera_link', rospy.Duration(1.0))
     
     # Has the orientation of goal set to be the direction from the robot to the nav_goal
-    # Calculate the angle between A and B
     theta = math.atan2(point.point.y[1] - point_in_camera.pose.orientation.y, point.point.x - point_in_camera.pose.orientation.x)
-    # Create the quaternion (w, x, y, z)
     quaternion = (math.cos(theta / 2), 0, 0, math.sin(theta / 2))
 
     goal = PoseStamped()
@@ -159,7 +157,7 @@ class follow_operator(smach.State):
 
         rospy.loginfo('Executing state follow_operator')
 
-        point = rospy.wait_for_message("tópico da posição da pessoa", PointStamped)
+        point = rospy.wait_for_message("selected/torsoPoint", PointStamped)
 
 
         bt = String()
