@@ -309,20 +309,20 @@ def main():
     # Open the container
     with sm:
         # Add states to the container
-        smach.StateMachine.add('INITIAL_POSE', init_pose(), 
-                               transitions={'succeeded':'NEW_FACE'})
+        #smach.StateMachine.add('INITIAL_POSE', init_pose(), 
+        #                       transitions={'succeeded':'NEW_FACE'})
         
         smach.StateMachine.add('NEW_FACE', new_face(), 
                                transitions={'new_face_added':'TRAIN',
                                             'failed':'failed'})
         
         smach.StateMachine.add('TRAIN', train(), 
-                               transitions={'training_done':'TURN_AROUND',# 'TURN_AROUND' for the actual task
+                               transitions={'training_done':'RECOGNIZE',# 'TURN_AROUND' for the actual task
                                             'failed':'failed'})
         
-        smach.StateMachine.add('TURN_AROUND', turn_around(), 
-                              transitions={'succeeded':'RECOGNIZE',
-                                            'failed':'failed'})
+        #smach.StateMachine.add('TURN_AROUND', turn_around(), 
+        #                      transitions={'succeeded':'RECOGNIZE',
+        #                                    'failed':'failed'})
 
         smach.StateMachine.add('RECOGNIZE', recognize(), 
                                transitions={'recognized':'GET_DETECTION',

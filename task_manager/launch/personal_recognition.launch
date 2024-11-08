@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+  <include file="$(find utbots_face_recognition)/launch/usb_action_server.launch"/>
+  <node pkg="utbots_tts" type="ros_tts_mimic.py" name="ros_tts_mimic" output="screen">
+    <param name="voice" value="en_US/hifi-tts_low" />
+  </node>
+  <node pkg="yolov8ros" type="yolov8node.py" name="yolov8node" output="screen"/>
+</launch>
