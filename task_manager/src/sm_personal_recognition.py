@@ -176,8 +176,12 @@ class turn_around(smach.State):
 
         rospy.loginfo('Checking navigation action')
 
-        self.client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
-        self.client.wait_for_server()
+        self.goal_pub = rospy.Publisher('/bridge_navigate_to_pose/goal')
+
+        
+
+        #self.client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        #self.client.wait_for_server()
 
     def execute(self, userdata):
 
@@ -209,17 +213,24 @@ class turn_around(smach.State):
         goal.target_pose.pose.orientation.z = flipped_quaternion[3]
         goal.target_pose.pose.orientation.w = flipped_quaternion[0]
 
-        self.client.send_goal(goal)
-
-        finished = self.client.wait_for_result()
-
-        if not finished: rospy.logerr("Action server not available")
-        else:
-            rospy.loginfo(self.client.get_result())
-
-        if self.client.get_state() == actionlib.GoalStatus.SUCCEEDED:
+        self.goal_pub.publish(goal)
+        turn_success = rospy.wait_for_message('/bridge_navigate_to_pose/result', String)
+        
+        if turn_success == "succeeded":
             return 'succeeded'
         return 'failed'
+
+        #self.client.send_goal(goal)
+        #finished = self.client.wait_for_result()
+
+
+        #if not finished: rospy.logerr("Action server not available")
+        #else:
+        #    rospy.loginfo(self.client.get_result())
+
+        #if self.client.get_state() == actionlib.GoalStatus.SUCCEEDED:
+        #    return 'succeeded'
+        #return 'failed'
 
 global bboxes
 bboxes = None
