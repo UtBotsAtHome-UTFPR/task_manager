@@ -9,6 +9,7 @@ from utbots_actions.msg import InterpretLlamaAction, InterpretLlamaGoal
 from smach_ros import SimpleActionState
 from fpdf import FPDF
 import os
+import datetime
 
 number_of_questions = 6
 
@@ -82,10 +83,10 @@ class detect_va(smach.State):
 
         rospy.loginfo('Executing state question_counter')
 
-        if userdata.reset_va_in == True:
-            userdata.set_goal=False
-            userdata.reset_va_out = False
-            return 'to_detection'
+        # if userdata.reset_va_in == True:
+        #     userdata.set_goal=False
+        #     userdata.reset_va_out = False
+        #     return 'to_detection'
             
 
         if userdata.activated_in.data == False:
@@ -135,7 +136,6 @@ def main():
         def goal_Llama_cb(userdata, goal):
             action_goal=InterpretLlamaGoal()
             action_goal.Answer.data=userdata.set_goal
-            print(action_goal.Answer.data)
             
             return action_goal
             
@@ -149,7 +149,7 @@ def main():
         # State that counts the questions
         smach.StateMachine.add('QUESTION_COUNTER', 
                                question_counter(), #smach.State class
-                               transitions={'action_understood': 'DETECT_VA',
+                               transitions={'action_understood': 'REQUEST_ACTIVATION',
                                             'all_answered': 'done',
                                             'aborted': 'failed'},
                                remapping={'question_counter': 'counter',
@@ -161,13 +161,12 @@ def main():
                                SimpleActionState('llama_inference', #smach.State class
                                                  InterpretLlamaAction, 
                                                  goal=InterpretLlamaGoal(),
-
                                                 #  input_keys=['set_goal'],
                                                 #  goal_cb=goal_Llama_cb,
                                                  result_slots=['LLMInput', 'LLMOutput', 'Activation']),
-                               transitions={'succeeded': 'QUESTION_COUNTER',
-                                            'aborted': 'QUESTION_COUNTER',
-                                            'preempted': 'QUESTION_COUNTER'},
+                               transitions={'succeeded': 'DETECT_VA',
+                                            'aborted': 'DETECT_VA',
+                                            'preempted': 'DETECT_VA'},
                                remapping={'Activation':'activation'})
         
         smach.StateMachine.add('DETECT_VA', #to_detection','to_answer','aborted
@@ -197,7 +196,7 @@ def main():
         # State that logs the answers
         smach.StateMachine.add('ANSWERS_LOG', 
                                answers_log(), 
-                               transitions={'log_saved': 'REQUEST_ACTIVATION',
+                               transitions={'log_saved': 'QUESTION_COUNTER',
                                             'aborted': 'failed'},
                                remapping={'LLMInput': 'llm_input', 
                                           'LLMOutput': 'llm_output'})
@@ -222,7 +221,9 @@ def main():
     dir=pkg_path+"/logs/"
     if not os.path.exists(dir):
         os.makedirs(dir)
-    pdf.output(dir+f"answer_questions_log_{current_time}.pdf")#
+    # pdf.output(dir+f"answer_questions_log_{current_time}.pdf")#
+    pdf.output(dir+f"answer_questions_log_"+datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y")+".pdf")#
+
     rospy.spin()
     sis.stop()
 
