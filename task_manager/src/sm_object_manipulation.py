@@ -4,9 +4,13 @@ import rospy
 import smach
 import smach_ros
 import actionlib
+import rospkg
+import yaml
 from cv_bridge import CvBridge
 import cv2
-from utbots_actions.msg import YOLODetectionAction, YOLODetectionGoal, Extract3DPointAction, Extract3DPointGoal
+from std_msgs.msg import String
+from geometry_msgs.msg import PoseStamped
+from utbots_actions.msg import YOLODetectionAction, YOLODetectionGoal, Extract3DPointAction
 from smach_ros import SimpleActionState
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -18,27 +22,71 @@ bboxes = None
 # Initialize CvBridge to convert ROS image message to OpenCV image
 bridge = CvBridge()
 
+# Initialize the rospkg instance
+rospack = rospkg.RosPack()
+
+# Get the path to the desired package (replace 'your_package' with the actual package name)
+package_path = rospack.get_path('task_manager')
+
+def retrieve_waypoint(nametag):
+    # Open and read the YAML file
+    with open(f"{package_path}/waypoints.yaml", 'r') as file:
+        data = yaml.safe_load(file)
+
+    # Find the pose with the given nametag
+    for pose_data in data['poses']:
+        if pose_data['nametag'] == nametag:
+            # Create a PoseStamped message
+            pose_stamped = PoseStamped()
+
+            # Fill in the header
+            pose_stamped.header.seq = pose_data['header']['seq']
+            pose_stamped.header.stamp.secs = pose_data['header']['stamp']['secs']
+            pose_stamped.header.stamp.nsecs = pose_data['header']['stamp']['nsecs']
+            pose_stamped.header.frame_id = pose_data['header']['frame_id']
+
+            # Fill in the pose (position and orientation)
+            pose_stamped.pose.position.x = pose_data['pose']['position']['x']
+            pose_stamped.pose.position.y = pose_data['pose']['position']['y']
+            pose_stamped.pose.position.z = pose_data['pose']['position']['z']
+
+            pose_stamped.pose.orientation.x = pose_data['pose']['orientation']['x']
+            pose_stamped.pose.orientation.y = pose_data['pose']['orientation']['y']
+            pose_stamped.pose.orientation.z = pose_data['pose']['orientation']['z']
+            pose_stamped.pose.orientation.w = pose_data['pose']['orientation']['w']
+
+            return pose_stamped
+
 # This state will send a nav goal to the place the objects are located
-# class go_to_shelf(smach.State):
-    # def __init__(self):
-    #     smach.State.__init__(self, 
-    #                         outcomes=['reached', 'all_answered','aborted'],
-    #                         input_keys=['waypoint'])
+class go_to_shelf(smach.State):
+    def __init__(self):
+        smach.State.__init__(self, 
+                            outcomes=['succeeded', 'aborted'],
+                            input_keys=['waypoint'])
+        self.result = "" 
+        self.pub = rospy.Publisher('/bridge_navigate_to_pose/goal', PoseStamped, queue_size=1)
 
-    # def execute(self, userdata):
+    def execute(self, userdata):
 
-    #     rospy.loginfo('Executing state question_counter')
+        rospy.loginfo('Executing state go_to_shelf')
 
-    #     if userdata.question_counter >= number_of_questions:
-    #         return 'all_answered'
+        try:
+            # Sleep briefly to ensure the message is sent
+            rospy.sleep(2)
+            rospy.loginfo("Publish waypoint")
+            self.pub.publish(retrieve_waypoint("shelf"))
 
-    #     try:
-    #         userdata.question_counter_out = userdata.question_counter + 1
-    #         return 'action_understood'
+            self.result = rospy.wait_for_message('/bridge_navigate_to_pose/result', String)
+            print(self.result)
+            if self.result.data == "Succeeded":
+                self.result.data = ""
+                return 'succeeded'
+            else:
+                self.result.data = ""
+                return 'aborted'
         
-    #     except rospy.ROSInterruptException:
-    #         return 'aborted'
-
+        except rospy.ROSInterruptException:
+            return 'aborted'
 
         
 # This state will save the labeled image with objects detected by YOLOv8
@@ -156,21 +204,14 @@ def main():
     # Define the goal for the action client
     # nav_goal = 
     yolo_goal = YOLODetectionGoal()
-    yolo_goal.TargetCategory.data = "bottle"
 
     # Open the container
     with sm:
         # State that goes to the shelf
-        # smach.StateMachine.add('GO_TO_SHELF', 
-        #                         SimpleActionState('go_to_shelf',
-        #                                             , 
-        #                                             goal=nav_goal,
-        #                                             result_slots=[]),
-        #                         transitions={'succeeded': 'ANSWERS_LOG',
-        #                                         'aborted': 'ANSWERS_LOG',
-        #                                         'preempted': 'ANSWERS_LOG'},
-        #                         remapping={'NLUInput': 'nlu_input', 
-        #                                   'NLUOutput': 'nlu_output'})
+        smach.StateMachine.add('GO_TO_SHELF', 
+                                go_to_shelf(),
+                                transitions={'succeeded': 'GET_DETECTION',
+                                            'aborted': 'failed'})
 
         # State that gets the object detections from YOLO
         smach.StateMachine.add('GET_DETECTION', 
