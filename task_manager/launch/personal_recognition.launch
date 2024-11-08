@@ -2,8 +2,10 @@
 
 <launch>
   <include file="$(find utbots_face_recognition)/launch/usb_action_server.launch"/>
-  <node pkg="utbots_tts" type="ros_tts_mimic.py" name="ros_tts_mimic" output="screen">
+  <node pkg="utbots_tts" type="ros_tts_mimic.py" name="ros_tts_mimic" output="log">
     <param name="voice" value="en_US/hifi-tts_low" />
   </node>
-  <node pkg="yolov8ros" type="yolov8node.py" name="yolov8node" output="screen"/>
+  <node pkg="yolov8ros" type="yolov8node.py" name="yolov8node" output="screen">
+    <param name="camera_topic" value="/camera/rgb/image_color"/>
+  </node>
 </launch>
