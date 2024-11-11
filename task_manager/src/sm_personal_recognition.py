@@ -6,7 +6,7 @@ import actionlib
 import utbots_actions.msg
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
 from std_srvs.srv import Empty
 from utbots_actions.msg import YOLODetectionAction, YOLODetectionGoal, Extract3DPointAction, Extract3DPointGoal
 from smach_ros import SimpleActionState
@@ -44,7 +44,7 @@ class new_face(smach.State):
 
         goal = utbots_actions.msg.new_faceGoal()
         
-        goal.n_pictures.data = 1
+        goal.n_pictures.data = 20
         goal.name.data = "Operator"
 
         try:
@@ -176,7 +176,7 @@ class turn_around(smach.State):
 
         rospy.loginfo('Checking navigation action')
 
-        self.goal_pub = rospy.Publisher('/bridge_navigate_to_pose/goal')
+        self.goal_pub = rospy.Publisher('/bridge_navigate_to_pose/goal', PoseStamped, queue_size=1)
 
         
 
@@ -187,9 +187,9 @@ class turn_around(smach.State):
 
         rospy.loginfo('Executing state turn_around')
 
-        odom_msg = rospy.wait_for_message('/odom', Odometry)
+        #odom_msg = rospy.wait_for_message('/odom', Odometry)
 
-        goal = MoveBaseGoal()
+        '''goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = 'map'
         goal.target_pose.header.stamp = rospy.Time.now()
 
@@ -213,10 +213,10 @@ class turn_around(smach.State):
         goal.target_pose.pose.orientation.z = flipped_quaternion[3]
         goal.target_pose.pose.orientation.w = flipped_quaternion[0]
 
-        self.goal_pub.publish(goal)
+        self.goal_pub.publish(goal)'''
         turn_success = rospy.wait_for_message('/bridge_navigate_to_pose/result', String)
-        
-        if turn_success == "succeeded":
+        print(turn_success)
+        if turn_success.data == "Succeeded":
             return 'succeeded'
         return 'failed'
 
@@ -264,7 +264,7 @@ class detection_log(smach.State):
             current_time = rospy.Time.now()
 
             # Create a new PDF file
-            pdf_file = f"/home/laser/catkin_ws/src/utbots_tasks/task_manager/logs/object_recognition_manipulation_log_{current_time}.pdf"
+            pdf_file = f"/home/laser/catkin_ws/src/utbots_tasks/task_manager/logs/personal_recognition_{current_time}.pdf"
             c = canvas.Canvas(pdf_file, pagesize=A4)
 
             # Insert an image (you can adjust the image size by scaling)
@@ -309,7 +309,7 @@ def main():
     rospy.init_node('face_recognition_task')
 
     global pub_text 
-    pub_text = rospy.Publisher("/robot_speech", String, queue_size=1)
+    pub_text = rospy.Publisher("/utbots/voice/tts/robot_speech", String, queue_size=1)
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=['done', 'failed'])
@@ -320,20 +320,20 @@ def main():
     # Open the container
     with sm:
         # Add states to the container
-        smach.StateMachine.add('INITIAL_POSE', init_pose(), 
-                               transitions={'succeeded':'NEW_FACE'})
+#        smach.StateMachine.add('INITIAL_POSE', init_pose(), 
+#                               transitions={'succeeded':'NEW_FACE'})
         
         smach.StateMachine.add('NEW_FACE', new_face(), 
                                transitions={'new_face_added':'TRAIN',
                                             'failed':'failed'})
         
         smach.StateMachine.add('TRAIN', train(), 
-                               transitions={'training_done':'TURN_AROUND',# 'TURN_AROUND' for the actual task
+                               transitions={'training_done':'RECOGNIZE',# 'TURN_AROUND' for the actual task
                                             'failed':'failed'})
         
-        smach.StateMachine.add('TURN_AROUND', turn_around(), 
-                              transitions={'succeeded':'RECOGNIZE',
-                                            'failed':'failed'})
+#        smach.StateMachine.add('TURN_AROUND', turn_around(), 
+#                              transitions={'succeeded':'RECOGNIZE',
+#                                            'failed':'failed'})
 
         smach.StateMachine.add('RECOGNIZE', recognize(), 
                                transitions={'recognized':'GET_DETECTION',
