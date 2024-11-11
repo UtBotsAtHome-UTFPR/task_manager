@@ -44,7 +44,7 @@ class new_face(smach.State):
 
         goal = utbots_actions.msg.new_faceGoal()
         
-        goal.n_pictures.data = 20
+        goal.n_pictures.data = 40
         goal.name.data = "Operator"
 
         try:
