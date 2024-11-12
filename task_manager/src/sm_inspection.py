@@ -15,27 +15,30 @@ import time
 class set_nav_goal(smach.State):
     def __init__(self):
 
-        smach.State.__init__(self, outcomes=['succeeded'], output_keys=["goal_1", "goal_2"])
+        smach.State.__init__(self, outcomes=['succeeded'], output_keys=["goal1", "goal2"])
 
     def execute(self, userdata):
 
         rospy.loginfo("Setting nav goals")
 
-        userdata.goal1 = PoseStamped()
+        goal1 = PoseStamped()
 
-        userdata.goal1.pose.position.x = 1
-        userdata.goal1.pose.position.y = 2
+        goal1.pose.position.x = 1
+        goal1.pose.position.y = 2
 
-        userdata.goal1.pose.orientation.x = 3
-        userdata.goal1.pose.orientation.w = 4
+        goal1.pose.orientation.x = 3
+        goal1.pose.orientation.w = 4
 
-        userdata.goal2 = PoseStamped()
+        goal2 = PoseStamped()
 
-        userdata.goal2.pose.position.x = 5
-        userdata.goal2.pose.position.y = 6
+        goal2.pose.position.x = 5
+        goal2.pose.position.y = 6
 
-        userdata.goal2.pose.orientation.x = 7
-        userdata.goal2.pose.orientation.w = 8
+        goal2.pose.orientation.x = 7
+        goal2.pose.orientation.w = 8
+
+        userdata.goal1 = goal1
+        userdata.goal2 = goal2
         
         return "succeeded"
 
@@ -51,12 +54,11 @@ class wait_door_open(smach.State):
 
         start_time = time.time()
         curr_time = float('inf')
-        length = len(scan.ranges)
 
         while(start_time + self.time_out < curr_time):
             
             scan = rospy.wait_for_message('/scan_filtered', LaserScan)
-
+            length = len(scan.ranges)
             # Check if the door is open and return succeeded
             #check_vec = scan.ranges[(length/2) - 30:(length/2) + 30]
             size = len(scan.msg)
@@ -66,7 +68,7 @@ class wait_door_open(smach.State):
             check_vec = sub_vec_a + sub_vec_b
 
             if len([i for i in check_vec if i > 1.5]) > 45:
-                time.sleep(3)
+                time.sleep(5)
                 return "succeeded"
             curr_time = time.time()
 
@@ -90,17 +92,17 @@ class go_to(smach.State):
 
         goal = PoseStamped()
 
-        goal.pose.position.x = userdata.goal.position.x
-        goal.pose.position.y = userdata.goal.position.y
+        goal.pose.position.x = userdata.goal.pose.position.x
+        goal.pose.position.y = userdata.goal.pose.position.y
 
-        goal.pose.orientation.x = userdata.goal.orientation.x
-        goal.pose.orientation.w = userdata.goal.orientation.w
+        goal.pose.orientation.x = userdata.goal.pose.orientation.x
+        goal.pose.orientation.w = userdata.goal.pose.orientation.w
 
         self.goal_pub.publish(goal)
 
         turn_success = rospy.wait_for_message('/bridge_navigate_to_pose/result', String, timeout=600)
 
-        if turn_success.data == "Succeeded":
+        if turn_success.data.lower() == "succeeded":
             return 'succeeded'
         return 'failed'
 
@@ -155,7 +157,7 @@ def main():
                                 remapping={"goal":"goal1"})
 
         smach.StateMachine.add('GO_TO2', go_to(), 
-                                transitions={'succeeded':"WAIT_VM", 
+                                transitions={'succeeded':"done", 
                                             'failed':"failed"},
                                 remapping={"goal":"goal2"})
 
