@@ -25,7 +25,6 @@ import time
 '''/usb_cam/start_capture                           
 /usb_cam/stop_capture'''
 
-
 class new_face(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['new_face_added', 'failed'])
@@ -189,13 +188,13 @@ class turn_around(smach.State):
 
         #odom_msg = rospy.wait_for_message('/odom', Odometry)
 
-        '''goal = MoveBaseGoal()
-        goal.target_pose.header.frame_id = 'map'
-        goal.target_pose.header.stamp = rospy.Time.now()
+        '''goal = PoseStamped()
+        goal.header.frame_id = 'map'
+        goal.header.stamp = rospy.Time.now()
 
-        goal.target_pose.pose.position.x = odom_msg.pose.pose.position.x
-        goal.target_pose.pose.position.y = odom_msg.pose.pose.position.y
-        goal.target_pose.pose.position.z = 0.0
+        goal.pose.position.x = odom_msg.pose.pose.position.x
+        goal.pose.position.y = odom_msg.pose.pose.position.y
+        goal.pose.position.z = 0.0
 
         quaternion = np.array([odom_msg.pose.pose.orientation.w, odom_msg.pose.pose.orientation.x, odom_msg.pose.pose.orientation.y, odom_msg.pose.pose.orientation.z])
 
@@ -208,10 +207,10 @@ class turn_around(smach.State):
         # Get the result as a quaternion
         flipped_quaternion = flipped_quaternion.as_quat()
 
-        goal.target_pose.pose.orientation.x = flipped_quaternion[1]
-        goal.target_pose.pose.orientation.y = flipped_quaternion[2]
-        goal.target_pose.pose.orientation.z = flipped_quaternion[3]
-        goal.target_pose.pose.orientation.w = flipped_quaternion[0]
+        goal.pose.orientation.x = flipped_quaternion[1]
+        goal.pose.orientation.y = flipped_quaternion[2]
+        goal.pose.orientation.z = flipped_quaternion[3]
+        goal.pose.orientation.w = flipped_quaternion[0]
 
         self.goal_pub.publish(goal)'''
         turn_success = rospy.wait_for_message('/bridge_navigate_to_pose/result', String)
