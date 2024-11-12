@@ -22,6 +22,7 @@ class set_nav_goal(smach.State):
         rospy.loginfo("Setting nav goals")
 
         goal1 = PoseStamped()
+        goal1.header.frame_id = ""
 
         goal1.pose.position.x = 1
         goal1.pose.position.y = 2
@@ -30,6 +31,7 @@ class set_nav_goal(smach.State):
         goal1.pose.orientation.w = 4
 
         goal2 = PoseStamped()
+        goal2.header.frame_id = ""
 
         goal2.pose.position.x = 5
         goal2.pose.position.y = 6
@@ -51,6 +53,7 @@ class wait_door_open(smach.State):
     def execute(self, userdata):
 
         rospy.loginfo("Waiting for door to open")
+        pub_vm.publish("Waiting for door")
 
         start_time = time.time()
         curr_time = float('inf')
@@ -63,16 +66,19 @@ class wait_door_open(smach.State):
             #check_vec = scan.ranges[(length/2) - 30:(length/2) + 30]
             size = len(scan.msg)
             sub_vec_a = scan.msg[0:31]
-            sub_vec_b = scan.msg[size - 31:size -1]
+            sub_vec_b = scan.msg[size - 30:size -1]
 
             check_vec = sub_vec_a + sub_vec_b
 
             if len([i for i in check_vec if i > 1.5]) > 45:
+                rospy.loginfo("Detected open door")
                 time.sleep(5)
+                pub_vm.publish("Detected open door")
                 return "succeeded"
             curr_time = time.time()
 
         rospy.loginfo("Timed out waiting for door to open")
+        pub_vm.publish("Timed out waiting for door to open")
 
         return "timed_out"
     
@@ -87,6 +93,8 @@ class go_to(smach.State):
         self.goal_pub = rospy.Publisher('/bridge_navigate_to_pose/goal', PoseStamped, queue_size=1)
 
     def execute(self, userdata):
+
+        pub_vm.publish("Going to objective")
 
         rospy.loginfo('Executing state go_to')
 
@@ -115,17 +123,18 @@ class wait_vm(smach.State):
     def execute(self, userdata):
 
         rospy.loginfo('Executing state wait_vm')
+        pub_vm.publish("Waiting for go ahead voice message")
 
         while(True):
             msg = rospy.wait_for_message('/utbots/voice/stt/whispered', String)
             if "go ahead" in msg.data.lower():
+                pub_vm.publish("I heard go ahead")
+                time.sleep(3)
                 return "succeeded"
 
         return 'failed'
 
 # Estado de ir até um ponto fora
-
-
 
 
 def main():
@@ -134,6 +143,9 @@ def main():
 
     # Create a SMACH state machine
     sm = smach.StateMachine(outcomes=['done', 'failed'])
+
+    global pub_vm
+    pub_vm = rospy.Publisher("/utbots/voice/tts/robot_speech", String, queue_size=1)
 
     # Open the container
     with sm:

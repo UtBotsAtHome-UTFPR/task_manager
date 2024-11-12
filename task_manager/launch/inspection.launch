@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+  <node pkg="utbots_tts" type="ros_tts_mimic.py" name="ros_tts_mimic" output="log">
+    <param name="voice" value="en_US/hifi-tts_low" />
+  </node>
+</launch>
