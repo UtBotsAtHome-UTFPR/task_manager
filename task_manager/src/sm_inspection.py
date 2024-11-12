@@ -60,13 +60,13 @@ class wait_door_open(smach.State):
 
         while(start_time + self.time_out < curr_time):
             
-            scan = rospy.wait_for_message('/scan_filtered', LaserScan)
+            scan = rospy.wait_for_message('/scan', LaserScan)
             length = len(scan.ranges)
             # Check if the door is open and return succeeded
             #check_vec = scan.ranges[(length/2) - 30:(length/2) + 30]
-            size = len(scan.msg)
-            sub_vec_a = scan.msg[0:31]
-            sub_vec_b = scan.msg[size - 30:size -1]
+            size = len(scan.ranges)
+            sub_vec_a = scan.ranges[0:31]
+            sub_vec_b = scan.ranges[size - 30:size -1]
 
             check_vec = sub_vec_a + sub_vec_b
 
