@@ -22,22 +22,22 @@ class set_nav_goal(smach.State):
         rospy.loginfo("Setting nav goals")
 
         goal1 = PoseStamped()
-        goal1.header.frame_id = ""
+        goal1.header.frame_id = "map"
 
-        goal1.pose.position.x = 1
-        goal1.pose.position.y = 2
+        goal1.pose.position.x = 6.840
+        goal1.pose.position.y = 2.289
 
-        goal1.pose.orientation.x = 3
-        goal1.pose.orientation.w = 4
+        goal1.pose.orientation.z = 0.828
+        goal1.pose.orientation.w = 0.561
 
         goal2 = PoseStamped()
-        goal2.header.frame_id = ""
+        goal2.header.frame_id = "map"
 
-        goal2.pose.position.x = 5
-        goal2.pose.position.y = 6
+        goal2.pose.position.x = -0.149
+        goal2.pose.position.y = 7.331
 
-        goal2.pose.orientation.x = 7
-        goal2.pose.orientation.w = 8
+        goal2.pose.orientation.z = -0.991
+        goal2.pose.orientation.w = 0.133
 
         userdata.goal1 = goal1
         userdata.goal2 = goal2
@@ -103,7 +103,7 @@ class go_to(smach.State):
         goal.pose.position.x = userdata.goal.pose.position.x
         goal.pose.position.y = userdata.goal.pose.position.y
 
-        goal.pose.orientation.x = userdata.goal.pose.orientation.x
+        goal.pose.orientation.z = userdata.goal.pose.orientation.z
         goal.pose.orientation.w = userdata.goal.pose.orientation.w
 
         self.goal_pub.publish(goal)
