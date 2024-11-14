@@ -186,9 +186,9 @@ class turn_around(smach.State):
 
         rospy.loginfo('Executing state turn_around')
 
-        #odom_msg = rospy.wait_for_message('/odom', Odometry)
+        odom_msg = rospy.wait_for_message('/odom', Odometry)
 
-        '''goal = PoseStamped()
+        goal = PoseStamped()
         goal.header.frame_id = 'map'
         goal.header.stamp = rospy.Time.now()
 
@@ -212,10 +212,10 @@ class turn_around(smach.State):
         goal.pose.orientation.z = flipped_quaternion[3]
         goal.pose.orientation.w = flipped_quaternion[0]
 
-        self.goal_pub.publish(goal)'''
+        self.goal_pub.publish(goal)
         turn_success = rospy.wait_for_message('/bridge_navigate_to_pose/result', String)
         print(turn_success)
-        if turn_success.data == "Succeeded":
+        if turn_success.data.lower() == "succeeded":
             return 'succeeded'
         return 'failed'
 
@@ -327,12 +327,12 @@ def main():
                                             'failed':'failed'})
         
         smach.StateMachine.add('TRAIN', train(), 
-                               transitions={'training_done':'RECOGNIZE',# 'TURN_AROUND' for the actual task
+                               transitions={'training_done':'TURN_AROUND',# 'TURN_AROUND' for the actual task
                                             'failed':'failed'})
         
-#        smach.StateMachine.add('TURN_AROUND', turn_around(), 
-#                              transitions={'succeeded':'RECOGNIZE',
-#                                            'failed':'failed'})
+        smach.StateMachine.add('TURN_AROUND', turn_around(), 
+                              transitions={'succeeded':'RECOGNIZE',
+                                            'failed':'failed'})
 
         smach.StateMachine.add('RECOGNIZE', recognize(), 
                                transitions={'recognized':'GET_DETECTION',
